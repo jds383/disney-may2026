@@ -156,12 +156,10 @@ function QuickServiceDining({ color }) {
           {open === key && (
             <div style={{ background: "#FFF", borderTop: "1px solid #F0EBE3" }}>
               {quickServiceData[key].map((r, i) => (
-                <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "9px 22px", borderBottom: i < quickServiceData[key].length - 1 ? "1px solid #F5F0EA" : "none", textDecoration: "none" }}>
-                  <div>
-                    <div style={{ fontSize: 13, color: color, fontWeight: "500" }}>{r.name} ↗</div>
-                    <div style={{ fontSize: 11, color: "#AAA", marginTop: 1 }}>{r.where}</div>
-                  </div>
-                </a>
+                <div key={i} style={{ padding: "9px 22px", borderBottom: i < quickServiceData[key].length - 1 ? "1px solid #F5F0EA" : "none" }}>
+                  <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: color, fontWeight: 400, textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 3, display: "block", textAlign: "left" }}>{r.name} ↗</a>
+                  <div style={{ fontSize: 11, color: "#AAA", marginTop: 2, textAlign: "left" }}>{r.where}</div>
+                </div>
               ))}
             </div>
           )}
@@ -222,7 +220,7 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#7B4F2E", emoji: "🌴",
     parkId: null,
     highlights: [
-      { sortTime:  930, icon: "🛺", text: "9:30 AM · Kingdom Strollers delivery · outside Grand Floridian main lobby near vintage car" },
+      { sortTime:  930, icon: "🛺", text: "9:30 AM · Kingdom Strollers delivery", subtext: "Outside Grand Floridian main lobby near vintage car" },
       { sortTime: 1100, icon: "🏨", text: "11:00 AM · Checkout / Drop bags with Bell Services" },
       { sortTime: 1300, alternatives: [
         { icon: "🏊", title: "Resort Pools", segments: [{ text: "Grand Floridian Beach Pool", url: "https://disneyworld.disney.go.com/recreation/grand-floridian-resort-and-spa/pools-grand-floridian-resort-and-spa/" }, { text: " or ", url: null }, { text: "Polynesian Pool", url: "https://disneyworld.disney.go.com/recreation/polynesian-resort/pools-polynesian-village-resort/" }, { text: " · 9 AM–11 PM", url: null }] },
@@ -302,7 +300,7 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#2C5F8A", emoji: "🏠",
     parkId: null,
     highlights: [
-      { sortTime: 1000, icon: "🛺", text: "10:00 AM · Kingdom Strollers pickup · outside Riviera main lobby near valet station" },
+      { sortTime: 1000, icon: "🛺", text: "10:00 AM · Kingdom Strollers pickup", subtext: "Outside Riviera main lobby near valet station" },
       { sortTime: 1100, icon: "🍽️", text: "11:00 AM · Topolino's Terrace Character Breakfast", url: "https://disneyworld.disney.go.com/dining/riviera-resort/topolinos-terrace/menus/breakfast/", reservations: [
         { party: "S Family", time: "11:00 AM", size: "4 guests", conf: "356081980082" },
         { party: "M Family", time: "11:10 AM", size: "5 guests", conf: "356081979581" },
@@ -488,7 +486,9 @@ function WeatherAlert({ weather }) {
 // ── LLRow ─────────────────────────────────────────────────────────────────────
 function LLRow({ h, color, borderBottom }) {
   const isMeet = h.entryType === "Character Meet";
-  const rideUrl = isMeet ? null : RIDES.find(r => r.id === h.rideId)?.url;
+  const rideUrl = isMeet
+    ? RIDES.find(r => r.name === h.rideName || r.displayName === h.rideName)?.url ?? null
+    : RIDES.find(r => r.id === h.rideId)?.url;
   const location = isMeet ? h.rideId : null;
   const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "");
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
@@ -499,7 +499,7 @@ function LLRow({ h, color, borderBottom }) {
       <div style={{ flex:1 }}>
         {rideUrl
           ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, display:"block", textAlign:"left" }}>{fullText}</a>
-          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText}</span>
+          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText.replace(" ↗", "")}</span>
         }
         {location && (
           <span style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:2, textAlign:"left" }}>{location}</span>
@@ -728,7 +728,10 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                         {!h.reservations && (
                           <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}>
                             <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
-                            {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
+                            <div style={{ flex:1 }}>
+                              {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
+                              {h.subtext && <div style={{ fontSize:11, color:"#AAA", marginTop:2, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
+                            </div>
                           </div>
                         )}
                         {h.reservations && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><ReservationBadges reservations={h.reservations} color={day.color} icon={h.icon} text={h.text} url={h.url} /></div>}
