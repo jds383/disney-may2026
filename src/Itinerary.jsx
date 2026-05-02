@@ -342,8 +342,7 @@ function isLLExpired(endTime) {
   return nowMins > endMins + 60;
 }
 
-async function fetchBookedLLs(bookingDbId) {
-  if (!bookingDbId) return [];
+async function fetchBookedLLs() {
   try {
     const res = await fetch(`${WORKER_URL}/bookings`);
     if (!res.ok) return [];
