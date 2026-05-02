@@ -331,8 +331,10 @@ function parseTimeToInt(str) {
 }
 
 // Returns true if the LL window closed more than 60 mins ago
-function isLLExpired(endTime) {
-  if (!endTime) return false;
+function isLLExpired(endTime, isoDate) {
+  if (!endTime || !isoDate) return false;
+  const today = new Date().toISOString().split("T")[0];
+  if (isoDate !== today) return false; // only expire on the actual day
   const now = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
   const t = parseTimeToInt(endTime);
@@ -541,7 +543,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   const mergedHighlights = (() => {
     const base = day.highlights.map(h => ({ ...h, _type: "highlight" }));
     const llsForDay = bookedLLs
-      .filter(ll => ll.date === day.isoDate && !isLLExpired(ll.endTime))
+      .filter(ll => ll.date === day.isoDate && !isLLExpired(ll.endTime, ll.date))
       .map(ll => ({
         _type: "ll",
         sortTime: parseTimeToInt(ll.startTime),
