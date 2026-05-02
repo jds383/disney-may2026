@@ -911,21 +911,27 @@ export function Summary({ prefs }) {
       .map((p) => p.id);
   }
 
+  function bookersDisplay(rideId) {
+    const who = bookers(rideId);
+    if (who.length === PEOPLE.length) return "All";
+    return who.join(" · ");
+  }
+
   const SummaryRideItem = ({ label, isSingle, r, backup }) => {
     const bg     = isSingle ? "#FFF3E0" : "#E8F5E9";
     const color  = isSingle ? "#BF360C" : "#0A4A2E";
     const border = isSingle ? "#FFCC80" : "#A5D6A7";
-    const who    = bookers(r.id);
-    const backupWho = backup ? bookers(backup.id) : [];
+    const who    = bookersDisplay(r.id);
+    const backupWho = backup ? bookersDisplay(backup.id) : null;
     return (
       <div className="summary-item">
         <div className="summary-item-top">
           <span className="summary-badge" style={{ background: bg, color, border: `1px solid ${border}` }}>{label}</span>
           <div className="summary-ride-info">
             <a href={r.url} target="_blank" rel="noreferrer" className="summary-ride-name">{r.displayName} ↗</a>
-            {who.length > 0 && (
+            {who && (
               <div style={{ fontSize: 10, color: "#888", fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>
-                Book for: <span style={{ fontWeight: 600, color: "#555" }}>{who.join(" · ")}</span>
+                Book for: <span style={{ fontWeight: 600, color: "#555" }}>{who}</span>
               </div>
             )}
           </div>
@@ -935,9 +941,9 @@ export function Summary({ prefs }) {
             <span style={{ fontSize: 9, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, padding: "2px 6px", borderRadius: 6, background: "#F5F5F5", color: "#888", border: "1px solid #DDD", flexShrink: 0, marginTop: 1 }}>Backup</span>
             <div>
               <a href={backup.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#555", fontFamily: "'DM Sans', sans-serif", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 2 }}>{backup.displayName} ↗</a>
-              {backupWho.length > 0 && (
+              {backupWho && (
                 <div style={{ fontSize: 10, color: "#AAA", fontFamily: "'DM Sans', sans-serif", marginTop: 1 }}>
-                  Book for: <span style={{ fontWeight: 600, color: "#888" }}>{backupWho.join(" · ")}</span>
+                  Book for: <span style={{ fontWeight: 600, color: "#888" }}>{backupWho}</span>
                 </div>
               )}
             </div>
