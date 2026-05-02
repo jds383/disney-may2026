@@ -486,8 +486,13 @@ function WeatherAlert({ weather }) {
 // ── LLRow ─────────────────────────────────────────────────────────────────────
 function LLRow({ h, color, borderBottom }) {
   const isMeet = h.entryType === "Character Meet";
+  const MEET_URLS = {
+    "Meet Stitch (D. Visa)":           "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#starwarscharacterexperience",
+    "Star Wars Photo (D. Visa)":       "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#starwarscharacterexperience",
+    "Mystery Character Meet (D. Visa)":"https://disneyworld.disney.go.com/entertainment/epcot/visa-card-character-experience/",
+  };
   const rideUrl = isMeet
-    ? RIDES.find(r => r.name === h.rideName || r.displayName === h.rideName)?.url ?? null
+    ? MEET_URLS[h.rideName] ?? RIDES.find(r => r.name === h.rideName)?.url ?? null
     : RIDES.find(r => r.id === h.rideId)?.url;
   const location = isMeet ? h.rideId : null;
   const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "");
@@ -728,7 +733,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                         {!h.reservations && (
                           <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}>
                             <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
-                            <div style={{ flex:1 }}>
+                            <div style={{ flex:1, textAlign:"left" }}>
                               {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
                               {h.subtext && <div style={{ fontSize:11, color:"#AAA", marginTop:2, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
                             </div>
