@@ -241,7 +241,9 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#1A6B4A", emoji: "🏰",
     parkId: "mk",
     highlights: [
-      { sortTime:  830, icon: "🏰", text: "8:30 AM Early Entry · 9:00 AM Park Open · 10:00 PM Park Close", url: "https://disneyworld.disney.go.com/calendars/" },
+      { sortTime:  830, icon: "🏰", text: "8:30 AM · Early Entry begins", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-23/#/magic-kingdom/" },
+      { sortTime:  900, icon: "🏰", text: "9:00 AM · Park Open", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-23/#/magic-kingdom/" },
+      { sortTime: 2200, icon: "🏰", text: "10:00 PM · Park Close", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-23/#/magic-kingdom/" },
       { sortTime: 1130, icon: "🍽️", text: "Quick Service Options", quickService: true },
       { sortTime: 2015, icon: "🌟", text: "8:15 PM · Disney Starlight: Dream the Night Away Parade", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/starlight-dream-night-away-parade/" },
       { sortTime: 2035, icon: "🚤", text: "8:35 - 10:05 PM · Electrical Water Pageant", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/electrical-water-pageant/" },
@@ -273,7 +275,9 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#4A2C6B", emoji: "🌐",
     parkId: "ep",
     highlights: [
-      { sortTime:  830, icon: "🌐", text: "8:30 AM Early Entry · 9:00 AM Park Open · 9:00 PM Park Close", url: "https://disneyworld.disney.go.com/calendars/" },
+      { sortTime:  830, icon: "🌐", text: "8:30 AM · Early Entry begins", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-25/#/epcot/" },
+      { sortTime:  900, icon: "🌐", text: "9:00 AM · Park Open", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-25/#/epcot/" },
+      { sortTime: 2059, icon: "🌐", text: "9:00 PM · Park Close", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-25/#/epcot/" },
       { sortTime: 1125, icon: "👸", text: "11:25 AM · Akershus Princess Storybook Dining", url: "https://disneyworld.disney.go.com/dining/epcot/akershus-royal-banquet-hall/menus/breakfast/", reservations: [
         { party: "S + M Family", time: "11:25 AM", size: "9 guests", conf: "356081980073" },
       ]},
@@ -287,7 +291,9 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#8A3A2C", emoji: "🎬",
     parkId: "hs",
     highlights: [
-      { sortTime:  830, icon: "🎬", text: "8:30 AM Early Entry · 9:00 AM Park Open · 9:00 PM Park Close", url: "https://disneyworld.disney.go.com/calendars/" },
+      { sortTime:  830, icon: "🎬", text: "8:30 AM · Early Entry begins", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-26/#/hollywood-studios/" },
+      { sortTime:  900, icon: "🎬", text: "9:00 AM · Park Open", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-26/#/hollywood-studios/" },
+      { sortTime: 2059, icon: "🎬", text: "9:00 PM · Park Close", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-26/#/hollywood-studios/" },
       { sortTime: 1610, icon: "🍽️", text: "4:10 PM · Hollywood & Vine Fantasmic! Dining Package", url: "https://disneyworld.disney.go.com/dining/hollywood-studios/hollywood-and-vine/menus/dinner/", reservations: [
         { party: "S + M Family", time: "4:10 PM", size: "9 guests", conf: "356081979580" },
       ]},
