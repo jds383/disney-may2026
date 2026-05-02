@@ -1001,11 +1001,11 @@ export function Summary({ prefs }) {
                   </div>
                 )}
                 {labeled.map((r, i) => {
-                  // Backups: Multipass 1 → 2nd Round[0], Multipass 2 → 2nd Round[1], Single Pass → none
+                  // Backups: match same Multipass tier (mp1/mp2), Single Pass → none
                   let backup = null;
                   if (!r.isSingle) {
-                    const mpIndex = labeled.filter((x, xi) => !x.isSingle && xi <= i).length - 1;
-                    if (mpIndex === 0 || mpIndex === 1) backup = rankedSecond[mpIndex] ?? null;
+                    const rideTier = r.ll; // "mp1" or "mp2"
+                    backup = rankedSecond.find((s) => s.ll === rideTier) ?? null;
                   }
                   return <SummaryRideItem key={r.id} label={r.label} isSingle={r.isSingle} r={r} backup={backup} />;
                 })}
