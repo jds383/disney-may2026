@@ -551,7 +551,13 @@ function ViewToggle({ view, setView }) {
 
 // ── Main Itinerary export ──────────────────────────────────────────────────────
 export function Itinerary({ view, setView, prefs, syncing, loading, syncError, onPref, onNotes, onClosed, onRdNom, onRdConfirm, onLLStatus }) {
-  const [activeDay, setActiveDay] = useState(0);
+  const [activeDay, setActiveDayRaw] = useState(() => {
+    try { const s = localStorage.getItem("dw2026-activeDay"); return s !== null ? parseInt(s) : 0; } catch(_) { return 0; }
+  });
+  const setActiveDay = (i) => {
+    setActiveDayRaw(i);
+    try { localStorage.setItem("dw2026-activeDay", String(i)); } catch(_) {}
+  };
   const day = days[activeDay];
   const [rooms, setRooms] = useState({});
   const [bookedLLs, setBookedLLs] = useState([]);
