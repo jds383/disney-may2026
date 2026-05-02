@@ -199,7 +199,7 @@ export default function App() {
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#FBF7F2", minHeight: "100vh" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; background: #FBF7F2; font-family: 'DM Sans', sans-serif; }
         .app { max-width: 480px; margin: 0 auto; padding: 20px 16px 60px; }
@@ -243,11 +243,11 @@ export default function App() {
         .pb.sel-skip    { background: #C0392B !important; border-color: #C0392B !important; color: #FFF !important; }
         .notes-sec { padding: 8px 16px 10px; }
         .notes-sec.section-closed { opacity: 0.4; pointer-events: none; background: #EEECEA; }
-        .notes-inp { width: 100%; border: 1.5px solid #D0CBC2; border-radius: 8px; padding: 7px 10px; font-size: 12px; font-family: 'DM Serif Display', serif; color: #1A1A1A; resize: none; background: #FBF7F2; min-height: 44px; }
+        .notes-inp { width: 100%; border: 1.5px solid #D0CBC2; border-radius: 8px; padding: 7px 10px; font-size: 12px; font-family: 'DM Sans', sans-serif; color: #1A1A1A; resize: none; background: #FBF7F2; min-height: 44px; }
         .notes-inp:focus { outline: none; border-color: #AAA; }
         .rank-sec { margin-top: 24px; background: #FFF; border-radius: 14px; border: 1px solid #EDE8E1; }
         .rank-hdr { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #F5F0EA; }
-        .rank-title { font-size: 14px; color: #1A1A1A; font-family: 'DM Serif Display', serif; }
+        .rank-title { font-size: 14px; color: #1A1A1A; font-family: 'DM Sans', sans-serif; }
         .chev { font-size: 11px; color: #AAA; transition: transform 0.2s; display: inline-block; }
         .chev.open { transform: rotate(180deg); }
         .rank-body { padding: 10px 16px 12px; position: relative; }
@@ -292,7 +292,7 @@ export default function App() {
         .ll-menu-check { margin-left: auto; color: #1A6B4A; }
         .summary-park { background: #FFF; border-radius: 14px; border: 1px solid #EDE8E1; margin-bottom: 10px; overflow: hidden; }
         .summary-park-hdr { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #F5F0EA; }
-        .summary-park-name { font-size: 14px; font-family: 'DM Serif Display', serif; }
+        .summary-park-name { font-size: 14px; font-family: 'DM Sans', sans-serif; }
         .summary-body { padding: 10px 16px 12px; }
         .summary-empty { font-size: 12px; color: #AAA; font-family: 'DM Sans', sans-serif; }
         .summary-section-lbl { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #AAA; font-family: 'DM Sans', sans-serif; margin: 10px 0 4px; }

@@ -374,7 +374,7 @@ function Countdown() {
   if (today < dep) { mode = "pre"; value = Math.round((dep - today) / 86400000); sublabel = value === 1 ? "DAY TO GO" : "DAYS TO GO"; }
   else if (today <= ret) { mode = "trip"; value = Math.round((today - dep) / 86400000) + 1; sublabel = "OF 7"; }
   else { mode = "done"; }
-  if (mode === "done") return <div style={{ textAlign: "center", padding: "12px 0 20px" }}><div style={{ fontSize: 20, color: "#C8A96E", fontFamily: "'DM Serif Display', serif", fontStyle: "italic" }}>See ya real soon! 👋🏰</div></div>;
+  if (mode === "done") return <div style={{ textAlign: "center", padding: "12px 0 20px" }}><div style={{ fontSize: 20, color: "#C8A96E", fontFamily: "'DM Sans', sans-serif", fontStyle: "italic" }}>See ya real soon! 👋🏰</div></div>;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "4px 0 20px" }}>
       <div style={{ position: "relative", width: 82, height: 88, flexShrink: 0, background: "#F0EDE8", borderRadius: 10, boxShadow: "0 6px 18px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.9)", border: "1px solid #D5CFC7", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -386,7 +386,7 @@ function Countdown() {
       </div>
       <div>
         <div style={{ fontSize: 16, letterSpacing: "0.12em", color: "#1C2B4A", fontFamily: "'DM Sans', sans-serif", fontWeight: "bold" }}>{sublabel}</div>
-        {mode === "trip" && <div style={{ fontSize: 11, color: "#C8A96E", fontFamily: "'DM Serif Display', serif", fontStyle: "italic", marginTop: 4 }}>See ya real soon! 🎉</div>}
+        {mode === "trip" && <div style={{ fontSize: 11, color: "#C8A96E", fontFamily: "'DM Sans', sans-serif", fontStyle: "italic", marginTop: 4 }}>See ya real soon! 🎉</div>}
       </div>
     </div>
   );
@@ -581,13 +581,13 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#FBF7F2", fontFamily: "'DM Serif Display', serif", padding: "28px 20px 40px" }}>
+    <div style={{ minHeight: "100vh", background: "#FBF7F2", fontFamily: "'DM Sans', sans-serif", padding: "28px 20px 40px" }}>
       <div style={{ maxWidth: 480, margin: "0 auto" }}>
         {isToday("2026-05-21") && <Fireworks />}
 
         {/* Title */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: "normal", margin: "0 0 6px 0", letterSpacing: "-0.02em", color: "#1A1A1A", textAlign: "left", fontFamily: "'DM Serif Display', serif" }}>Disney World May 2026</h1>
+          <h1 style={{ fontSize: 24, fontWeight: "normal", margin: "0 0 6px 0", letterSpacing: "-0.02em", color: "#1A1A1A", textAlign: "left", fontFamily: "'DM Sans', sans-serif" }}>Disney World May 2026</h1>
         </div>
         <Countdown />
 
@@ -622,12 +622,12 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
             <button
               onClick={() => goTo(activeDay - 1)}
               disabled={activeDay === 0}
-              style={{ padding: "6px 10px", borderRadius: 20, border: "1px solid #EDE8E1", background: "#FFF", color: activeDay === 0 ? "#CCC" : "#555", fontSize: 12, cursor: activeDay === 0 ? "default" : "pointer", fontFamily: "'DM Serif Display', serif" }}
+              style={{ padding: "6px 10px", borderRadius: 20, border: "1px solid #EDE8E1", background: "#FFF", color: activeDay === 0 ? "#CCC" : "#555", fontSize: 12, cursor: activeDay === 0 ? "default" : "pointer", fontFamily: "'DM Sans', sans-serif" }}
             >←</button>
             <button
               onClick={() => goTo(activeDay + 1)}
               disabled={activeDay === days.length - 1}
-              style={{ padding: "6px 10px", borderRadius: 20, border: "1px solid #EDE8E1", background: "#FFF", color: activeDay === days.length - 1 ? "#CCC" : "#555", fontSize: 12, cursor: activeDay === days.length - 1 ? "default" : "pointer", fontFamily: "'DM Serif Display', serif" }}
+              style={{ padding: "6px 10px", borderRadius: 20, border: "1px solid #EDE8E1", background: "#FFF", color: activeDay === days.length - 1 ? "#CCC" : "#555", fontSize: 12, cursor: activeDay === days.length - 1 ? "default" : "pointer", fontFamily: "'DM Sans', sans-serif" }}
             >→</button>
           </div>
         </div>
@@ -674,20 +674,23 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
               <div style={{ padding:"8px 0" }}>
                 {mergedHighlights.map((h, hi) => (
                   <div key={hi}>
-                    {h._type === "ll" ? (
-                      <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom: hi < mergedHighlights.length - 1 ? "1px solid #F5F0EA" : "none", background: "#F8FBF9" }}>
-                        <span style={{ fontSize:14, flexShrink:0, marginTop:1 }}>⚡</span>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:13, color: day.color, fontWeight:500, fontFamily:"'DM Sans',sans-serif", textAlign:"left" }}>
-                            {h.rideName}
+                    {h._type === "ll" ? (() => {
+                        const rideUrl = RIDES.find(r => r.id === h.rideId)?.url;
+                        const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "") + (h.party && h.party !== "All" ? ` · ${h.party}` : "");
+                        return (
+                          <div style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 22px", borderBottom: hi < mergedHighlights.length - 1 ? "1px solid #F5F0EA" : "none" }}>
+                            <span style={{ fontSize:14, flexShrink:0 }}>⚡</span>
+                            <div style={{ flex:1, display:"flex", alignItems:"baseline", gap:8, flexWrap:"wrap" }}>
+                              {rideUrl
+                                ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3 }}>{h.rideName} ↗</a>
+                                : <span style={{ fontSize:13, color:day.color, fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.rideName}</span>
+                              }
+                              <span style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", whiteSpace:"nowrap" }}>{timeStr}</span>
+                            </div>
+                            <span style={{ fontSize:9, fontFamily:"'DM Sans',sans-serif", fontWeight:600, padding:"2px 8px", borderRadius:8, background:"#E8F5E9", color:"#1A6B4A", border:"1px solid #A5D6A7", flexShrink:0 }}>LL</span>
                           </div>
-                          <div style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", marginTop:2, textAlign:"left" }}>
-                            {h.startTime}{h.endTime ? ` – ${h.endTime}` : ""}
-                            {h.party && h.party !== "All" ? ` · ${h.party}` : ""}
-                          </div>
-                        </div>
-                        <span style={{ fontSize:9, fontFamily:"'DM Sans',sans-serif", fontWeight:600, padding:"2px 8px", borderRadius:8, background:"#E8F5E9", color:"#1A6B4A", border:"1px solid #A5D6A7", flexShrink:0, marginTop:2 }}>LL</span>
-                      </div>
+                        );
+                      })()
                     ) : h.alternatives ? (
                       <div style={{ borderTop:"1px solid #F5F0EA" }}>
                         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, padding:"12px 12px" }}>
@@ -707,7 +710,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                         {!h.reservations && (
                           <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}>
                             <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
-                            {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left" }}>{h.text}</span>}
+                            {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
                           </div>
                         )}
                         {h.reservations && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><ReservationBadges reservations={h.reservations} color={day.color} icon={h.icon} text={h.text} url={h.url} /></div>}
