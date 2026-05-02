@@ -33,7 +33,7 @@ const LL_STATUS_COLORS = {
   [LL_STATUS.DONTBOOK]: "#C0392B",
 };
 
-const PARKS = [
+export const PARKS = [
   { id: "mk", name: "Magic Kingdom",     color: "#2C5F8A" },
   { id: "ep", name: "EPCOT",             color: "#4A2C6B" },
   { id: "hs", name: "Hollywood Studios", color: "#8A3A2C" },
@@ -249,7 +249,7 @@ const RAW_RIDES = [
   { id:"hs21", park:"hs", name:"Stitch Visa Character Experience",                    type:"Character Meet", ll:"noll", visa:true, hours:"9:00am–12:00pm", location:"Celebrity Spotlight, Echo Lake", url:"https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#starwarscharacterexperience" },
 ];
 
-const RIDES = RAW_RIDES
+export const RIDES = RAW_RIDES
   .map((r) => ({ ...r, displayName: toDisplayName(r.name) }))
   .sort((a, b) => sortKey(a.displayName).localeCompare(sortKey(b.displayName)));
 
@@ -329,7 +329,7 @@ async function deleteVoteFromNotion(pageId) {
   });
 }
 
-async function saveMetaToNotion(rideId, rideName, park, meta, rdConfirmedId) {
+export async function saveMetaToNotion(rideId, rideName, park, meta, rdConfirmedId) {
   try {
     const res = await fetch(`${WORKER_URL}/meta`, {
       method: "POST",
@@ -365,7 +365,7 @@ function scoreColorClass(s) {
   if (s >= 0)  return "score-lo";
   return "score-ng";
 }
-function isClosed(rideId, prefs) {
+export function isClosed(rideId, prefs) {
   return prefs[rideId]?.closed ?? RIDES.find((r) => r.id === rideId)?.closed ?? false;
 }
 function preBookCounts(parkId, prefs, excludeRideId) {
@@ -852,11 +852,31 @@ function Rankings({ parkId, prefs, onRdConfirm, onLLStatus }) {
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 
-function Summary({ prefs }) {
+const TRIP_START = new Date(2026, 4, 21); // May 21 2026
+
+export function Summary({ prefs }) {
   const [collapsed, setCollapsed] = useState({});
+  const isBeforeTrip = new Date() < TRIP_START;
+  const [summaryMode, setSummaryMode] = useState(isBeforeTrip ? "prebook" : "all");
 
   return (
     <div>
+      {/* Pre-Book / All toggle */}
+      <div style={{ display: "flex", background: "#EDE8E1", borderRadius: 20, padding: 3, marginBottom: 16 }}>
+        {[
+          { id: "prebook", label: "Pre-Book Only" },
+          { id: "all",     label: "Full Plan" },
+        ].map(({ id, label }) => (
+          <button key={id} onClick={() => setSummaryMode(id)} style={{
+            flex: 1, padding: "7px 0", border: "none", borderRadius: 17,
+            fontSize: 12, fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
+            cursor: "pointer", transition: "background 0.15s, color 0.15s",
+            background: summaryMode === id ? "#FFF" : "transparent",
+            color: summaryMode === id ? "#1A1A1A" : "#999",
+            boxShadow: summaryMode === id ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
+          }}>{label}</button>
+        ))}
+      </div>
       {PARKS.map((park) => {
         const rides    = RIDES.filter((r) => r.park === park.id);
         const rdConf   = prefs[`rdc_${park.id}`] ?? null;
@@ -869,32 +889,25 @@ function Summary({ prefs }) {
           .map((r) => ({ ...r, score: calcScore(r.id, prefs) }))
           .sort((a, b) => b.score - a.score);
 
-        const hasAnything = rdRide || firstLL || preBooks.length > 0 || secondRound.length > 0;
+        // Filter based on mode
+        const showRD      = summaryMode === "all" ? !!rdRide : false;
+        const showFirstLL = !!firstLL;
+        const showPreBook = preBooks.length > 0;
+        const showSecond  = summaryMode === "all" && secondRound.length > 0;
+
+        const hasAnything = showRD || showFirstLL || showPreBook || showSecond;
         const isCollapsed = collapsed[park.id];
 
-        const SummaryRideItem = ({ badge, badgeBg, badgeColor, badgeBorder, r }) => {
-          const sellout = SELLOUT[r.id];
-          const standby = STANDBY[r.id];
-          const urgStyle  = sellout ? URGENCY_COLOR[sellout.urgency] : null;
-          const diffStyle = standby ? DIFF_COLOR[standby.difficulty] : null;
-          return (
-            <div className="summary-item">
-              <div className="summary-item-top">
-                <span className="summary-badge" style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}` }}>{badge}</span>
-                <div className="summary-ride-info">
-                  <a href={r.url} target="_blank" rel="noreferrer" className="summary-ride-name">{r.displayName} ↗</a>
-                  <span className="summary-ll-type">{llText(r.ll, r.illPrice)}</span>
-                </div>
+        const SummaryRideItem = ({ badge, badgeBg, badgeColor, badgeBorder, r }) => (
+          <div className="summary-item">
+            <div className="summary-item-top">
+              <span className="summary-badge" style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}` }}>{badge}</span>
+              <div className="summary-ride-info">
+                <a href={r.url} target="_blank" rel="noreferrer" className="summary-ride-name">{r.displayName} ↗</a>
               </div>
-              {(sellout || standby) && (
-                <div className="summary-meta-row">
-                  {sellout && <span className="r-meta-badge r-meta-badge-ll" style={{ background: urgStyle.bg, color: urgStyle.color, border: `1px solid ${urgStyle.border}` }}>LL Sell Out: {sellout.time}</span>}
-                  {standby && <span className="r-meta-badge r-meta-badge-sb" style={{ background: diffStyle.bg, color: diffStyle.color, border: `1px solid ${diffStyle.border}` }}>Av SB: ~{standby.avg} min · {standby.insight}</span>}
-                </div>
-              )}
             </div>
-          );
-        };
+          </div>
+        );
 
         return (
           <div className="summary-park" key={park.id}>
@@ -905,10 +918,10 @@ function Summary({ prefs }) {
             {!isCollapsed && (
               <div className="summary-body">
                 {!hasAnything && <div className="summary-empty">No selections yet</div>}
-                {rdRide && <SummaryRideItem badge="🏃 Rope Drop" badgeBg="#F1F8F4" badgeColor="#1A6B4A" badgeBorder="#A5D6A7" r={rdRide} />}
-                {firstLL && <SummaryRideItem badge="1st LL" badgeBg="#E8F5E9" badgeColor="#0A4A2E" badgeBorder="#A5D6A7" r={firstLL} />}
-                {preBooks.map((r, i) => <SummaryRideItem key={r.id} badge={`Pre-Book ${i + 1}`} badgeBg="#F1F8F4" badgeColor="#1A6B4A" badgeBorder="#A5D6A7" r={r} />)}
-                {secondRound.length > 0 && (
+                {showRD    && <SummaryRideItem badge="🏃 Rope Drop" badgeBg="#F1F8F4" badgeColor="#1A6B4A" badgeBorder="#A5D6A7" r={rdRide} />}
+                {showFirstLL && <SummaryRideItem badge="1st LL" badgeBg="#E8F5E9" badgeColor="#0A4A2E" badgeBorder="#A5D6A7" r={firstLL} />}
+                {showPreBook && preBooks.map((r, i) => <SummaryRideItem key={r.id} badge={`Pre-Book ${i + 1}`} badgeBg="#F1F8F4" badgeColor="#1A6B4A" badgeBorder="#A5D6A7" r={r} />)}
+                {showSecond && (
                   <>
                     <div className="summary-section-lbl">2nd Round — book after first tap-in</div>
                     {secondRound.map((r, i) => <SummaryRideItem key={r.id} badge={`2nd Round ${i + 1}`} badgeBg="#FFFDE7" badgeColor="#B8860B" badgeBorder="#FFE082" r={r} />)}
@@ -925,7 +938,7 @@ function Summary({ prefs }) {
 
 // ── ParkRides ─────────────────────────────────────────────────────────────────
 
-function ParkRides({ parkId, prefs, onPref, onNotes, onClosed, onRdNom, syncing, onRdConfirm, onLLStatus }) {
+export function ParkRides({ parkId, prefs, onPref, onNotes, onClosed, onRdNom, syncing, onRdConfirm, onLLStatus }) {
   const [ratedOpen, setRatedOpen] = useState(false);
 
   const parkRides = RIDES.filter((r) => r.park === parkId);
@@ -1076,18 +1089,18 @@ export function LLPlanner() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #FBF7F2; font-family: 'Plus Jakarta Sans', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+        .app *, .app *::before, .app *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #FBF7F2; font-family: 'DM Sans', sans-serif; }
         .app { max-width: 480px; margin: 0 auto; padding: 20px 16px 60px; }
         .header { margin-bottom: 20px; }
         .header h1 { font-size: 22px; font-weight: normal; color: #1A1A1A; letter-spacing: -0.02em; margin-bottom: 4px; }
-        .header p  { font-size: 11px; color: #AAA; font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
-        .sync-status  { font-size: 10px; font-family: 'Plus Jakarta Sans', sans-serif; padding: 6px 10px; border-radius: 8px; margin-bottom: 14px; }
+        .header p  { font-size: 11px; color: #AAA; font-family: 'DM Sans', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
+        .sync-status  { font-size: 10px; font-family: 'DM Sans', sans-serif; padding: 6px 10px; border-radius: 8px; margin-bottom: 14px; }
         .sync-loading { background: #E3F2FD; color: #0D47A1; }
         .sync-error   { background: #FFF8E1; color: #E65100; }
         .park-tabs { display: flex; gap: 6px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
-        .park-tab  { flex-shrink: 0; padding: 7px 14px; border-radius: 20px; border: none; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; cursor: pointer; }
+        .park-tab  { flex-shrink: 0; padding: 7px 14px; border-radius: 20px; border: none; font-family: 'DM Sans', sans-serif; font-size: 11px; cursor: pointer; }
         .park-tab.active   { color: #FFF; }
         .park-tab.inactive { background: #EDE8E1; color: #1A1A1A; }
         .ride-card { background: #FFF; border-radius: 14px; border: 1px solid #EDE8E1; margin-bottom: 10px; overflow: hidden; }
@@ -1098,14 +1111,14 @@ export function LLPlanner() {
         .ride-name { font-size: 14px; color: #1A1A1A; flex: 1; line-height: 1.3; }
         .ride-name a { color: #1A1A1A; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
         .card-closed .ride-name a { color: #999; }
-        .ride-meta { font-size: 10px; color: #AAA; font-family: 'Plus Jakarta Sans', sans-serif; margin-bottom: 4px; }
-        .ride-location { font-size: 10px; color: #AAA; font-family: 'Plus Jakarta Sans', sans-serif; margin-bottom: 6px; }
+        .ride-meta { font-size: 10px; color: #AAA; font-family: 'DM Sans', sans-serif; margin-bottom: 4px; }
+        .ride-location { font-size: 10px; color: #AAA; font-family: 'DM Sans', sans-serif; margin-bottom: 6px; }
         .ride-meta.meta-closed { color: #B71C1C; font-weight: bold; }
         .controls-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .btn-sm { font-size: 9px; font-family: 'Plus Jakarta Sans', sans-serif; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; font-weight: bold; border: 1px solid #BDBDBD; background: #F5F5F5; color: #1A1A1A; cursor: pointer; }
-        .rd-btn { font-size: 9px; font-family: 'Plus Jakarta Sans', sans-serif; padding: 3px 10px; border-radius: 10px; text-transform: uppercase; font-weight: bold; border: 1.5px solid #C8C0B6; background: #F0EBE3; color: #1A1A1A; cursor: pointer; white-space: nowrap; }
+        .btn-sm { font-size: 9px; font-family: 'DM Sans', sans-serif; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; font-weight: bold; border: 1px solid #BDBDBD; background: #F5F5F5; color: #1A1A1A; cursor: pointer; }
+        .rd-btn { font-size: 9px; font-family: 'DM Sans', sans-serif; padding: 3px 10px; border-radius: 10px; text-transform: uppercase; font-weight: bold; border: 1.5px solid #C8C0B6; background: #F0EBE3; color: #1A1A1A; cursor: pointer; white-space: nowrap; }
         .rd-btn.on { background: #1A6B4A; border-color: #1A6B4A; color: #FFF; }
-        .score-badge { font-size: 11px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; }
+        .score-badge { font-size: 11px; font-family: 'DM Sans', sans-serif; font-weight: bold; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; }
         .score-hi { background: #E8F5E9; color: #1B5E20; }
         .score-md { background: #E3F2FD; color: #0D47A1; }
         .score-lo { background: #F5F5F5; color: #424242; }
@@ -1115,12 +1128,12 @@ export function LLPlanner() {
         .prefs { padding: 10px 16px 6px; border-bottom: 1px solid #F5F0EA; }
         .prefs.section-closed { opacity: 0.4; pointer-events: none; background: #EEECEA; }
         .fam-blk { margin-bottom: 8px; }
-        .fam-lbl { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #AAA; font-family: 'Plus Jakarta Sans', sans-serif; margin-bottom: 6px; }
+        .fam-lbl { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #AAA; font-family: 'DM Sans', sans-serif; margin-bottom: 6px; }
         .p-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-        .p-lbl { font-size: 11px; font-family: 'Plus Jakarta Sans', sans-serif; color: #1A1A1A; width: 18px; flex-shrink: 0; font-weight: bold; }
+        .p-lbl { font-size: 11px; font-family: 'DM Sans', sans-serif; color: #1A1A1A; width: 18px; flex-shrink: 0; font-weight: bold; }
         .sync-dot { font-size: 10px; color: #2C5F8A; margin-left: 1px; }
         .pref-btns { display: flex; gap: 3px; flex: 1; }
-        .pb { flex: 1; padding: 6px 2px; border-radius: 6px; border: 1.5px solid #C8C0B6; background: #F0EBE3; font-size: 8px; font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer; color: #1A1A1A; text-align: center; white-space: nowrap; font-weight: bold; }
+        .pb { flex: 1; padding: 6px 2px; border-radius: 6px; border: 1.5px solid #C8C0B6; background: #F0EBE3; font-size: 8px; font-family: 'DM Sans', sans-serif; cursor: pointer; color: #1A1A1A; text-align: center; white-space: nowrap; font-weight: bold; }
         .pb:hover:not(:disabled) { border-color: #999; background: #E5DED5; }
         .pb:disabled { opacity: 0.6; cursor: wait; }
         .pb.sel-must    { background: #1A6B4A !important; border-color: #1A6B4A !important; color: #FFF !important; }
@@ -1129,17 +1142,17 @@ export function LLPlanner() {
         .pb.sel-skip    { background: #C0392B !important; border-color: #C0392B !important; color: #FFF !important; }
         .notes-sec { padding: 8px 16px 10px; }
         .notes-sec.section-closed { opacity: 0.4; pointer-events: none; background: #EEECEA; }
-        .notes-inp { width: 100%; border: 1.5px solid #D0CBC2; border-radius: 8px; padding: 7px 10px; font-size: 12px; font-family: Georgia, serif; color: #1A1A1A; resize: none; background: #FBF7F2; min-height: 44px; }
+        .notes-inp { width: 100%; border: 1.5px solid #D0CBC2; border-radius: 8px; padding: 7px 10px; font-size: 12px; font-family: 'DM Serif Display', serif; color: #1A1A1A; resize: none; background: #FBF7F2; min-height: 44px; }
         .notes-inp:focus { outline: none; border-color: #AAA; }
         .rank-sec { margin-top: 24px; background: #FFF; border-radius: 14px; border: 1px solid #EDE8E1; }
         .rank-hdr { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #F5F0EA; }
-        .rank-title { font-size: 14px; color: #1A1A1A; font-family: Georgia, serif; }
+        .rank-title { font-size: 14px; color: #1A1A1A; font-family: 'DM Serif Display', serif; }
         .chev { font-size: 11px; color: #AAA; transition: transform 0.2s; display: inline-block; }
         .chev.open { transform: rotate(180deg); }
         .tog-row { display: flex; gap: 6px; padding: 10px 16px; border-bottom: 1px solid #F5F0EA; }
-        .tog-btn { flex: 1; padding: 6px; border-radius: 20px; border: 1.5px solid #C8C0B6; background: #F0EBE3; font-size: 10px; font-family: 'Plus Jakarta Sans', sans-serif; color: #1A1A1A; cursor: pointer; text-align: center; font-weight: bold; }
+        .tog-btn { flex: 1; padding: 6px; border-radius: 20px; border: 1.5px solid #C8C0B6; background: #F0EBE3; font-size: 10px; font-family: 'DM Sans', sans-serif; color: #1A1A1A; cursor: pointer; text-align: center; font-weight: bold; }
         .rank-body { padding: 10px 16px 12px; position: relative; }
-        .tier-lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: #555; font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.4; }
+        .tier-lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: #555; font-family: 'DM Sans', sans-serif; line-height: 1.4; }
         .tier-lbl-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 8px; margin: 10px 0 6px; background: #F0EBE3; }
         .tier-lbl-row:first-child { margin-top: 0; }
         .tier-lbl-row.complete { background: #F1F8F4; }
@@ -1149,15 +1162,15 @@ export function LLPlanner() {
         .r-item.r-skipped { background: #F5F3F0; border-color: #E8E3DC; opacity: 0.65; }
         .r-item-top { display: flex; align-items: center; gap: 6px; }
         .r-item-meta { display: flex; flex-wrap: nowrap; gap: 4px; margin-top: 4px; padding-left: 4px; }
-        .r-meta-badge { font-size: 9px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: bold; padding: 1px 7px; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .r-meta-badge { font-size: 9px; font-family: 'DM Sans', sans-serif; font-weight: bold; padding: 1px 7px; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .r-meta-badge-ll { flex: 0 0 auto; }
         .r-meta-badge-sb { flex: 1; }
-        .r-num  { font-size: 10px; font-family: 'Plus Jakarta Sans', sans-serif; color: #CCC; width: 14px; flex-shrink: 0; }
+        .r-num  { font-size: 10px; font-family: 'DM Sans', sans-serif; color: #CCC; width: 14px; flex-shrink: 0; }
         .r-name { flex: 1; font-size: 12px; color: #1A1A1A; line-height: 1.3; }
         .r-link { color: #1A1A1A; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px; }
         .r-name-skip .r-link { text-decoration: line-through; color: #AAA; }
-        .ill-price { font-size: 9px; color: #BF360C; margin-left: 4px; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .r-pill { font-size: 9px; font-family: 'Plus Jakarta Sans', sans-serif; padding: 1px 5px; border-radius: 8px; font-weight: bold; flex-shrink: 0; pointer-events: none; }
+        .ill-price { font-size: 9px; color: #BF360C; margin-left: 4px; font-family: 'DM Sans', sans-serif; }
+        .r-pill { font-size: 9px; font-family: 'DM Sans', sans-serif; padding: 1px 5px; border-radius: 8px; font-weight: bold; flex-shrink: 0; pointer-events: none; }
         .b-sp  { background: #FFF3E0; color: #BF360C; border: 1px solid #FFCC80; }
         .b-mp1  { background: #E8F5E9; color: #1B5E20; border: 1px solid #A5D6A7; }
         .b-mp2  { background: #E3F2FD; color: #0D47A1; border: 1px solid #90CAF9; }
@@ -1167,11 +1180,11 @@ export function LLPlanner() {
         .ll-tag   { background: #FFF3E0; color: #BF360C; border: 1px solid #FFCC80; }
         .rd-chk { width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid #C8C0B6; background: #FFF; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; font-size: 11px; }
         .rd-chk.on { background: #1A6B4A; border-color: #1A6B4A; color: #FFF; }
-        .conflict { background: #FFF8E1; border: 1px solid #FFE082; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; font-size: 11px; color: #E65100; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .rd-pend  { background: #F1F8F4; border: 1px solid #A5D6A7; border-radius: 8px; padding: 7px 10px; margin-bottom: 6px; font-size: 11px; color: #2E7D32; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .ll-menu-btn { font-size: 9px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: bold; padding: 3px 8px; border-radius: 10px; border: 1.5px solid #C8C0B6; background: #F0EBE3; color: #1A1A1A; cursor: pointer; white-space: nowrap; }
+        .conflict { background: #FFF8E1; border: 1px solid #FFE082; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; font-size: 11px; color: #E65100; font-family: 'DM Sans', sans-serif; }
+        .rd-pend  { background: #F1F8F4; border: 1px solid #A5D6A7; border-radius: 8px; padding: 7px 10px; margin-bottom: 6px; font-size: 11px; color: #2E7D32; font-family: 'DM Sans', sans-serif; }
+        .ll-menu-btn { font-size: 9px; font-family: 'DM Sans', sans-serif; font-weight: bold; padding: 3px 8px; border-radius: 10px; border: 1.5px solid #C8C0B6; background: #F0EBE3; color: #1A1A1A; cursor: pointer; white-space: nowrap; }
         .ll-menu-popup { position: absolute; right: 0; background: #FFF; border: 1px solid #EDE8E1; border-radius: 10px; overflow: hidden; width: 145px; z-index: 1000; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
-        .ll-menu-item { padding: 8px 12px; font-size: 11px; font-family: 'Plus Jakarta Sans', sans-serif; color: #1A1A1A; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .ll-menu-item { padding: 8px 12px; font-size: 11px; font-family: 'DM Sans', sans-serif; color: #1A1A1A; cursor: pointer; display: flex; align-items: center; gap: 8px; }
         .ll-menu-item:hover { background: #F5F2EE; }
         .ll-menu-item.ll-menu-disabled { opacity: 0.35; cursor: not-allowed; }
         .ll-menu-item.ll-menu-active { background: #F1F8F4; }
@@ -1180,17 +1193,17 @@ export function LLPlanner() {
         .ll-menu-check { margin-left: auto; color: #1A6B4A; }
         .summary-park { background: #FFF; border-radius: 14px; border: 1px solid #EDE8E1; margin-bottom: 10px; overflow: hidden; }
         .summary-park-hdr { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #F5F0EA; }
-        .summary-park-name { font-size: 14px; font-family: Georgia, serif; }
+        .summary-park-name { font-size: 14px; font-family: 'DM Serif Display', serif; }
         .summary-body { padding: 10px 16px 12px; }
-        .summary-empty { font-size: 12px; color: #AAA; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .summary-section-lbl { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #AAA; font-family: 'Plus Jakarta Sans', sans-serif; margin: 10px 0 4px; }
+        .summary-empty { font-size: 12px; color: #AAA; font-family: 'DM Sans', sans-serif; }
+        .summary-section-lbl { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #AAA; font-family: 'DM Sans', sans-serif; margin: 10px 0 4px; }
         .summary-item { padding: 8px 0; border-bottom: 1px solid #F5F0EA; }
         .summary-item:last-child { border-bottom: none; }
         .summary-item-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
-        .summary-badge { font-size: 9px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: bold; padding: 2px 7px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+        .summary-badge { font-size: 9px; font-family: 'DM Sans', sans-serif; font-weight: bold; padding: 2px 7px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
         .summary-ride-info { flex: 1; }
         .summary-ride-name { font-size: 13px; color: #1A1A1A; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px; display: block; line-height: 1.3; }
-        .summary-ll-type { font-size: 9px; color: #AAA; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .summary-ll-type { font-size: 9px; color: #AAA; font-family: 'DM Sans', sans-serif; }
         .summary-meta-row { display: flex; flex-wrap: nowrap; gap: 4px; margin-top: 4px; }
       `}</style>
       <div className="app">
