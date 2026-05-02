@@ -869,7 +869,13 @@ function selloutMinutes(rideId) {
 export function Summary({ prefs }) {
   const [collapsed, setCollapsed] = useState({});
   const isBeforeTrip = new Date() < TRIP_START;
-  const [summaryMode, setSummaryMode] = useState(isBeforeTrip ? "prebook" : "all");
+  const [summaryMode, setSummaryMode] = useState(() => {
+    try { const s = localStorage.getItem("dw2026-summaryMode"); return s || (isBeforeTrip ? "prebook" : "all"); } catch(_) { return isBeforeTrip ? "prebook" : "all"; }
+  });
+  const setSummaryModePersist = (v) => {
+    setSummaryMode(v);
+    try { localStorage.setItem("dw2026-summaryMode", v); } catch(_) {}
+  };
 
   // Build ranked LL list for a park
   function buildRankedLLs(parkId) {
@@ -961,7 +967,7 @@ export function Summary({ prefs }) {
           { id: "prebook", label: "Pre-Book Only" },
           { id: "all",     label: "Full Plan" },
         ].map(({ id, label }) => (
-          <button key={id} onClick={() => setSummaryMode(id)} style={{
+          <button key={id} onClick={() => setSummaryModePersist(id)} style={{
             flex: 1, padding: "7px 0", border: "none", borderRadius: 17,
             fontSize: 12, fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
             cursor: "pointer", transition: "background 0.15s, color 0.15s",

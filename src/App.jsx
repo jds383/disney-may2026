@@ -82,7 +82,13 @@ async function fetchAllVotes() {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [view,      setView]      = useState("itinerary");
+  const [view,      setView]      = useState(() => {
+    try { const s = localStorage.getItem("dw2026-view"); return s || "itinerary"; } catch(_) { return "itinerary"; }
+  });
+  const setViewPersist = (v) => {
+    setView(v);
+    try { localStorage.setItem("dw2026-view", v); } catch(_) {}
+  };
   const [prefs,     setPrefs]     = useState(() => loadStorage());
   const [loading,   setLoading]   = useState(true);
   const [syncing,   setSyncing]   = useState({});
@@ -308,7 +314,7 @@ export default function App() {
 
       <Itinerary
         view={view}
-        setView={setView}
+        setView={setViewPersist}
         prefs={prefs}
         syncing={syncing}
         loading={loading}
