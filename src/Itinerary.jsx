@@ -487,9 +487,9 @@ function WeatherAlert({ weather }) {
 function LLRow({ h, color, borderBottom }) {
   const isMeet = h.entryType === "Character Meet";
   const MEET_URLS = {
-    "Meet Stitch (D. Visa)":           "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#starwarscharacterexperience",
+    "Meet Stitch (D. Visa)":           "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#stitchcharacterexperience",
     "Star Wars Photo (D. Visa)":       "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#starwarscharacterexperience",
-    "Mystery Character Meet (D. Visa)":"https://disneyworld.disney.go.com/entertainment/epcot/visa-card-character-experience/",
+    "Mystery Character Meet (D. Visa)":"https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#characterexperience",
   };
   const rideUrl = isMeet
     ? MEET_URLS[h.rideName] ?? RIDES.find(r => r.name === h.rideName)?.url ?? null
