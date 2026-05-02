@@ -602,6 +602,19 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   })();
 
   const swipeStart = useRef(null);
+  const scrollStripRef = useRef(null);
+  const activePillRef = useRef(null);
+
+  // Auto-scroll active dot to center of strip
+  useEffect(() => {
+    if (!scrollStripRef.current || !activePillRef.current) return;
+    const strip = scrollStripRef.current;
+    const pill  = activePillRef.current;
+    const stripCenter = strip.offsetWidth / 2;
+    const pillCenter  = pill.offsetLeft + pill.offsetWidth / 2;
+    strip.scrollTo({ left: pillCenter - stripCenter, behavior: "smooth" });
+  }, [activeDay]);
+
   const goTo = (i) => setActiveDay(Math.max(0, Math.min(days.length - 1, i)));
   const onPointerDown = (e) => { swipeStart.current = e.clientX; };
   const onPointerUp = (e) => {
@@ -648,13 +661,18 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
           alignItems: "center",
           gap: 6,
         }}>
-          {/* Date pills — left justified, scrollable */}
-          <div style={{ flex: 1, display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
+          {/* Date pills — scrollable, active day shown as dot */}
+          <div ref={scrollStripRef} style={{ flex: 1, display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2, scrollbarWidth: "none" }}>
             {days.map((d, i) => {
               const parts = d.date.split(" "); const num = parseInt(parts[2]);
               const s = [1,21].includes(num)?"st":[2,22].includes(num)?"nd":[3,23].includes(num)?"rd":"th";
-              return (
-                <button key={i} onClick={() => setActiveDay(i)} style={{ flexShrink: 0, padding: "6px 10px", borderRadius: 20, border: "none", background: activeDay === i ? days[i].color : "#EDE8E1", color: activeDay === i ? "#FFF" : "#888", fontSize: 11, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}>
+              const isActive = activeDay === i;
+              return isActive ? (
+                <div key={i} ref={activePillRef} style={{ flexShrink: 0, width: 28, height: 28, borderRadius: "50%", background: days[i].color, display: "flex", alignItems: "center", justifyContent: "center", alignSelf: "center" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "rgba(255,255,255,0.9)" }} />
+                </div>
+              ) : (
+                <button key={i} onClick={() => setActiveDay(i)} style={{ flexShrink: 0, padding: "6px 10px", borderRadius: 20, border: "none", background: "#EDE8E1", color: "#888", fontSize: 11, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}>
                   {num}{s}
                 </button>
               );
