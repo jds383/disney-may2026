@@ -141,9 +141,9 @@ const quickServiceData = {
 function QuickServiceDining({ color }) {
   const [open, setOpen] = useState(null);
   const meals = [
-    { key: "breakfast", label: "🌅 Breakfast" },
-    { key: "lunch", label: "☀️ Lunch" },
-    { key: "dinner", label: "🌙 Dinner" },
+    { key: "breakfast", label: "📖 Breakfast" },
+    { key: "lunch", label: "📖 Lunch" },
+    { key: "dinner", label: "📖 Dinner" },
   ];
   return (
     <div style={{ borderTop: "1px solid #F5F0EA", background: "#FAFAF8" }}>
@@ -244,7 +244,7 @@ const days = [
     parkId: "mk",
     highlights: [
       { sortTime:  830, icon: "🏰", text: "8:30 AM Early Entry · 9:00 AM Park Open · 10:00 PM Park Close", url: "https://disneyworld.disney.go.com/calendars/" },
-      { sortTime: 1130, icon: "🍔", text: "Quick Service Options", quickService: true },
+      { sortTime: 1130, icon: "🍽️", text: "Quick Service Options", quickService: true },
       { sortTime: 2015, icon: "🌟", text: "8:15 PM · Disney Starlight: Dream the Night Away Parade", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/starlight-dream-night-away-parade/" },
       { sortTime: 2035, icon: "🚤", text: "8:35 - 10:05 PM · Electrical Water Pageant", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/electrical-water-pageant/" },
       { sortTime: 2200, icon: "🎆", text: "10:00 PM · Happily Ever After Fireworks", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/happily-ever-after-fireworks/" },
@@ -275,7 +275,7 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#4A2C6B", emoji: "🌐",
     parkId: "ep",
     highlights: [
-      { sortTime:  830, icon: "🎡", text: "8:30 AM Early Entry · 9:00 AM Park Open · 9:00 PM Park Close", url: "https://disneyworld.disney.go.com/calendars/" },
+      { sortTime:  830, icon: "🌐", text: "8:30 AM Early Entry · 9:00 AM Park Open · 9:00 PM Park Close", url: "https://disneyworld.disney.go.com/calendars/" },
       { sortTime: 1125, icon: "👸", text: "11:25 AM · Akershus Princess Storybook Dining", url: "https://disneyworld.disney.go.com/dining/epcot/akershus-royal-banquet-hall/menus/breakfast/", reservations: [
         { party: "S + M Family", time: "11:25 AM", size: "9 guests", conf: "356081980073" },
       ]},
@@ -505,11 +505,7 @@ function LLRow({ h, color, borderBottom }) {
           <span style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:2, textAlign:"left" }}>{location}</span>
         )}
       </div>
-      <span style={{ fontSize:9, fontFamily:"'DM Sans',sans-serif", fontWeight:600, padding:"2px 8px", borderRadius:8, flexShrink:0, marginTop:2,
-        background: isMeet ? "#F3E5F5" : "#E8F5E9",
-        color:      isMeet ? "#6A1B9A" : "#1A6B4A",
-        border:     isMeet ? "1px solid #CE93D8" : "1px solid #A5D6A7",
-      }}>{isMeet ? "Meet" : "LL"}</span>
+
     </div>
   );
 }
@@ -577,7 +573,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
       .map(ll => ({
         _type: "ll",
         sortTime: parseTimeToInt(ll.startTime),
-        icon: ll.type === "Character Meet" ? "🎭" : "⚡",
+        icon: ll.type === "Character Meet" ? "🧸" : "⚡",
         rideName: ll.rideName,
         startTime: ll.startTime,
         endTime: ll.endTime,
