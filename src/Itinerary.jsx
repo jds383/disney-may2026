@@ -495,8 +495,8 @@ function LLRow({ h, color, borderBottom }) {
       <span style={{ fontSize:14, flexShrink:0 }}>⚡</span>
       <div style={{ flex:1 }}>
         {rideUrl
-          ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left" }}>{fullText}</a>
-          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textAlign:"left" }}>{fullText}</span>
+          ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", display:"block" }}>{fullText}</a>
+          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textAlign:"left", display:"block" }}>{fullText}</span>
         }
       </div>
       <span style={{ fontSize:9, fontFamily:"'DM Sans',sans-serif", fontWeight:600, padding:"2px 8px", borderRadius:8, background:"#E8F5E9", color:"#1A6B4A", border:"1px solid #A5D6A7", flexShrink:0 }}>LL</span>
