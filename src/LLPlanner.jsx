@@ -854,10 +854,68 @@ function Rankings({ parkId, prefs, onRdConfirm, onLLStatus }) {
 
 const TRIP_START = new Date(2026, 4, 21); // May 21 2026
 
+// Parse "~8:09 AM" → minutes since midnight for sorting (Rarely = very large number)
+function selloutMinutes(rideId) {
+  const s = SELLOUT[rideId];
+  if (!s || s.time === "Rarely") return 9999;
+  const m = s.time.replace("~","").trim().match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return 9999;
+  let h = parseInt(m[1]), min = parseInt(m[2]);
+  if (m[3].toUpperCase() === "PM" && h !== 12) h += 12;
+  if (m[3].toUpperCase() === "AM" && h === 12) h = 0;
+  return h * 60 + min;
+}
+
 export function Summary({ prefs }) {
   const [collapsed, setCollapsed] = useState({});
   const isBeforeTrip = new Date() < TRIP_START;
   const [summaryMode, setSummaryMode] = useState(isBeforeTrip ? "prebook" : "all");
+
+  // Build ranked LL list for a park
+  function buildRankedLLs(parkId) {
+    const rides = RIDES.filter((r) => r.park === parkId);
+    const preBookStatuses = [LL_STATUS.FIRST, LL_STATUS.PREBOOK];
+    const secondStatuses  = [LL_STATUS.SECOND];
+
+    const prebook = rides.filter((r) => preBookStatuses.includes(prefs[r.id]?.llStatus));
+    const second  = rides.filter((r) => secondStatuses.includes(prefs[r.id]?.llStatus));
+
+    // Rank prebook rides: sort by sellout time asc, tiebreak by score desc
+    const ranked = [...prebook]
+      .map((r) => ({ ...r, selloutMins: selloutMinutes(r.id), score: calcScore(r.id, prefs) }))
+      .sort((a, b) => a.selloutMins !== b.selloutMins ? a.selloutMins - b.selloutMins : b.score - a.score);
+
+    // Assign labels: track separate counters for Single Pass and Multipass
+    let spCount = 0, mpCount = 0;
+    const labeled = ranked.map((r) => {
+      const isSingle = r.ll === "ill";
+      if (isSingle) { spCount++; return { ...r, label: `Single Pass${spCount > 1 ? ` ${spCount}` : ""}`, isSingle: true }; }
+      else           { mpCount++; return { ...r, label: `Multipass ${mpCount}`, isSingle: false }; }
+    });
+
+    // Rank second-round rides similarly
+    const rankedSecond = [...second]
+      .map((r) => ({ ...r, selloutMins: selloutMinutes(r.id), score: calcScore(r.id, prefs) }))
+      .sort((a, b) => a.selloutMins !== b.selloutMins ? a.selloutMins - b.selloutMins : b.score - a.score);
+
+    return { labeled, rankedSecond };
+  }
+
+  const SummaryRideItem = ({ label, isSingle, r }) => {
+    const bg     = isSingle ? "#FFF3E0" : "#E8F5E9";
+    const color  = isSingle ? "#BF360C" : "#0A4A2E";
+    const border = isSingle ? "#FFCC80" : "#A5D6A7";
+    return (
+      <div className="summary-item">
+        <div className="summary-item-top">
+          <span className="summary-badge" style={{ background: bg, color, border: `1px solid ${border}` }}>{label}</span>
+          <div className="summary-ride-info">
+            <a href={r.url} target="_blank" rel="noreferrer" className="summary-ride-name">{r.displayName} ↗</a>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -878,36 +936,14 @@ export function Summary({ prefs }) {
         ))}
       </div>
       {PARKS.map((park) => {
-        const rides    = RIDES.filter((r) => r.park === park.id);
-        const rdConf   = prefs[`rdc_${park.id}`] ?? null;
-        const rdRide   = rdConf ? rides.find((r) => r.id === rdConf) : null;
-        const firstLL  = rides.find((r) => prefs[r.id]?.llStatus === LL_STATUS.FIRST);
-        const preBooks = rides.filter((r) => prefs[r.id]?.llStatus === LL_STATUS.PREBOOK)
-          .map((r) => ({ ...r, score: calcScore(r.id, prefs) }))
-          .sort((a, b) => b.score - a.score);
-        const secondRound = rides.filter((r) => prefs[r.id]?.llStatus === LL_STATUS.SECOND)
-          .map((r) => ({ ...r, score: calcScore(r.id, prefs) }))
-          .sort((a, b) => b.score - a.score);
+        const rdConf  = prefs[`rdc_${park.id}`] ?? null;
+        const rdRide  = rdConf ? RIDES.find((r) => r.id === rdConf) : null;
+        const { labeled, rankedSecond } = buildRankedLLs(park.id);
 
-        // Filter based on mode
-        const showRD      = summaryMode === "all" ? !!rdRide : false;
-        const showFirstLL = !!firstLL;
-        const showPreBook = preBooks.length > 0;
-        const showSecond  = summaryMode === "all" && secondRound.length > 0;
-
-        const hasAnything = showRD || showFirstLL || showPreBook || showSecond;
+        const showRD     = summaryMode === "all" && !!rdRide;
+        const showSecond = summaryMode === "all" && rankedSecond.length > 0;
+        const hasAnything = showRD || labeled.length > 0 || showSecond;
         const isCollapsed = collapsed[park.id];
-
-        const SummaryRideItem = ({ badge, badgeBg, badgeColor, badgeBorder, r }) => (
-          <div className="summary-item">
-            <div className="summary-item-top">
-              <span className="summary-badge" style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}` }}>{badge}</span>
-              <div className="summary-ride-info">
-                <a href={r.url} target="_blank" rel="noreferrer" className="summary-ride-name">{r.displayName} ↗</a>
-              </div>
-            </div>
-          </div>
-        );
 
         return (
           <div className="summary-park" key={park.id}>
@@ -918,13 +954,30 @@ export function Summary({ prefs }) {
             {!isCollapsed && (
               <div className="summary-body">
                 {!hasAnything && <div className="summary-empty">No selections yet</div>}
-                {showRD    && <SummaryRideItem badge="🏃 Rope Drop" badgeBg="#F1F8F4" badgeColor="#1A6B4A" badgeBorder="#A5D6A7" r={rdRide} />}
-                {showFirstLL && <SummaryRideItem badge="1st LL" badgeBg="#E8F5E9" badgeColor="#0A4A2E" badgeBorder="#A5D6A7" r={firstLL} />}
-                {showPreBook && preBooks.map((r, i) => <SummaryRideItem key={r.id} badge={`Pre-Book ${i + 1}`} badgeBg="#F1F8F4" badgeColor="#1A6B4A" badgeBorder="#A5D6A7" r={r} />)}
+                {showRD && (
+                  <div className="summary-item">
+                    <div className="summary-item-top">
+                      <span className="summary-badge" style={{ background: "#F1F8F4", color: "#1A6B4A", border: "1px solid #A5D6A7" }}>🏃 Rope Drop</span>
+                      <div className="summary-ride-info">
+                        <a href={rdRide.url} target="_blank" rel="noreferrer" className="summary-ride-name">{rdRide.displayName} ↗</a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {labeled.map((r) => <SummaryRideItem key={r.id} label={r.label} isSingle={r.isSingle} r={r} />)}
                 {showSecond && (
                   <>
                     <div className="summary-section-lbl">2nd Round — book after first tap-in</div>
-                    {secondRound.map((r, i) => <SummaryRideItem key={r.id} badge={`2nd Round ${i + 1}`} badgeBg="#FFFDE7" badgeColor="#B8860B" badgeBorder="#FFE082" r={r} />)}
+                    {rankedSecond.map((r, i) => (
+                      <div key={r.id} className="summary-item">
+                        <div className="summary-item-top">
+                          <span className="summary-badge" style={{ background: "#FFFDE7", color: "#B8860B", border: "1px solid #FFE082" }}>{`2nd Round ${i + 1}`}</span>
+                          <div className="summary-ride-info">
+                            <a href={r.url} target="_blank" rel="noreferrer" className="summary-ride-name">{r.displayName} ↗</a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </>
                 )}
               </div>
