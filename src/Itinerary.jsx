@@ -360,6 +360,7 @@ async function fetchBookedLLs() {
         startTime: props["Start Time"]?.rich_text?.[0]?.text?.content ?? "",
         endTime:   props["End Time"]?.rich_text?.[0]?.text?.content ?? "",
         party:     props["Party"]?.rich_text?.[0]?.text?.content ?? "All",
+        type:      props["Type"]?.select?.name ?? "LL",
       };
     });
   } catch (_) { return []; }
@@ -486,20 +487,29 @@ function WeatherAlert({ weather }) {
 
 // ── LLRow ─────────────────────────────────────────────────────────────────────
 function LLRow({ h, color, borderBottom }) {
-  const rideUrl = RIDES.find(r => r.id === h.rideId)?.url;
+  const isMeet = h.entryType === "Character Meet";
+  const rideUrl = isMeet ? null : RIDES.find(r => r.id === h.rideId)?.url;
+  const location = isMeet ? h.rideId : null;
   const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "");
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
   const fullText = `${timeStr} · ${h.rideName}${partyStr} ↗`;
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 22px", borderBottom }}>
-      <span style={{ fontSize:14, flexShrink:0 }}>⚡</span>
+    <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom }}>
+      <span style={{ fontSize:14, flexShrink:0, marginTop:2 }}>{h.icon}</span>
       <div style={{ flex:1 }}>
         {rideUrl
-          ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", display:"block" }}>{fullText}</a>
-          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textAlign:"left", display:"block" }}>{fullText}</span>
+          ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, display:"block", textAlign:"left" }}>{fullText}</a>
+          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText}</span>
         }
+        {location && (
+          <span style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:2, textAlign:"left" }}>{location}</span>
+        )}
       </div>
-      <span style={{ fontSize:9, fontFamily:"'DM Sans',sans-serif", fontWeight:600, padding:"2px 8px", borderRadius:8, background:"#E8F5E9", color:"#1A6B4A", border:"1px solid #A5D6A7", flexShrink:0 }}>LL</span>
+      <span style={{ fontSize:9, fontFamily:"'DM Sans',sans-serif", fontWeight:600, padding:"2px 8px", borderRadius:8, flexShrink:0, marginTop:2,
+        background: isMeet ? "#F3E5F5" : "#E8F5E9",
+        color:      isMeet ? "#6A1B9A" : "#1A6B4A",
+        border:     isMeet ? "1px solid #CE93D8" : "1px solid #A5D6A7",
+      }}>{isMeet ? "Meet" : "LL"}</span>
     </div>
   );
 }
@@ -567,12 +577,13 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
       .map(ll => ({
         _type: "ll",
         sortTime: parseTimeToInt(ll.startTime),
-        icon: "⚡",
+        icon: ll.type === "Character Meet" ? "🎭" : "⚡",
         rideName: ll.rideName,
         startTime: ll.startTime,
         endTime: ll.endTime,
         party: ll.party,
         rideId: ll.rideId,
+        entryType: ll.type,
       }));
     return [...base, ...llsForDay].sort((a, b) => (a.sortTime ?? 9999) - (b.sortTime ?? 9999));
   })();
