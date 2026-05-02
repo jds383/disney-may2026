@@ -487,16 +487,17 @@ function WeatherAlert({ weather }) {
 // ── LLRow ─────────────────────────────────────────────────────────────────────
 function LLRow({ h, color, borderBottom }) {
   const rideUrl = RIDES.find(r => r.id === h.rideId)?.url;
-  const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "") + (h.party && h.party !== "All" ? ` · ${h.party}` : "");
+  const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "");
+  const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
+  const fullText = `${timeStr} · ${h.rideName}${partyStr} ↗`;
   return (
     <div style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 22px", borderBottom }}>
       <span style={{ fontSize:14, flexShrink:0 }}>⚡</span>
-      <div style={{ flex:1, display:"flex", alignItems:"baseline", gap:8, flexWrap:"wrap" }}>
+      <div style={{ flex:1 }}>
         {rideUrl
-          ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3 }}>{h.rideName} ↗</a>
-          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.rideName}</span>
+          ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left" }}>{fullText}</a>
+          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textAlign:"left" }}>{fullText}</span>
         }
-        <span style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", whiteSpace:"nowrap" }}>{timeStr}</span>
       </div>
       <span style={{ fontSize:9, fontFamily:"'DM Sans',sans-serif", fontWeight:600, padding:"2px 8px", borderRadius:8, background:"#E8F5E9", color:"#1A6B4A", border:"1px solid #A5D6A7", flexShrink:0 }}>LL</span>
     </div>
