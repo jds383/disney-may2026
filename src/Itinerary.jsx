@@ -156,7 +156,7 @@ function QuickServiceDining({ color }) {
           {open === key && (
             <div style={{ background: "#FFF", borderTop: "1px solid #F0EBE3" }}>
               {quickServiceData[key].map((r, i) => (
-                <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "9px 22px 9px 32px", borderBottom: i < quickServiceData[key].length - 1 ? "1px solid #F5F0EA" : "none", textDecoration: "none" }}>
+                <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "9px 22px", borderBottom: i < quickServiceData[key].length - 1 ? "1px solid #F5F0EA" : "none", textDecoration: "none" }}>
                   <div>
                     <div style={{ fontSize: 13, color: color, fontWeight: "500" }}>{r.name} ↗</div>
                     <div style={{ fontSize: 11, color: "#AAA", marginTop: 1 }}>{r.where}</div>
