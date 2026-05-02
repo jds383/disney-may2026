@@ -484,6 +484,25 @@ function WeatherAlert({ weather }) {
   );
 }
 
+// ── LLRow ─────────────────────────────────────────────────────────────────────
+function LLRow({ h, color, borderBottom }) {
+  const rideUrl = RIDES.find(r => r.id === h.rideId)?.url;
+  const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "") + (h.party && h.party !== "All" ? ` · ${h.party}` : "");
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 22px", borderBottom }}>
+      <span style={{ fontSize:14, flexShrink:0 }}>⚡</span>
+      <div style={{ flex:1, display:"flex", alignItems:"baseline", gap:8, flexWrap:"wrap" }}>
+        {rideUrl
+          ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3 }}>{h.rideName} ↗</a>
+          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.rideName}</span>
+        }
+        <span style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", whiteSpace:"nowrap" }}>{timeStr}</span>
+      </div>
+      <span style={{ fontSize:9, fontFamily:"'DM Sans',sans-serif", fontWeight:600, padding:"2px 8px", borderRadius:8, background:"#E8F5E9", color:"#1A6B4A", border:"1px solid #A5D6A7", flexShrink:0 }}>LL</span>
+    </div>
+  );
+}
+
 // ── ViewToggle ─────────────────────────────────────────────────────────────────
 function ViewToggle({ view, setView }) {
   return (
@@ -674,23 +693,8 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
               <div style={{ padding:"8px 0" }}>
                 {mergedHighlights.map((h, hi) => (
                   <div key={hi}>
-                    {h._type === "ll" ? (() => {
-                        const rideUrl = RIDES.find(r => r.id === h.rideId)?.url;
-                        const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "") + (h.party && h.party !== "All" ? ` · ${h.party}` : "");
-                        return (
-                          <div style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 22px", borderBottom: hi < mergedHighlights.length - 1 ? "1px solid #F5F0EA" : "none" }}>
-                            <span style={{ fontSize:14, flexShrink:0 }}>⚡</span>
-                            <div style={{ flex:1, display:"flex", alignItems:"baseline", gap:8, flexWrap:"wrap" }}>
-                              {rideUrl
-                                ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3 }}>{h.rideName} ↗</a>
-                                : <span style={{ fontSize:13, color:day.color, fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.rideName}</span>
-                              }
-                              <span style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", whiteSpace:"nowrap" }}>{timeStr}</span>
-                            </div>
-                            <span style={{ fontSize:9, fontFamily:"'DM Sans',sans-serif", fontWeight:600, padding:"2px 8px", borderRadius:8, background:"#E8F5E9", color:"#1A6B4A", border:"1px solid #A5D6A7", flexShrink:0 }}>LL</span>
-                          </div>
-                        );
-                      })()
+                    {h._type === "ll" ? (
+                      <LLRow h={h} color={day.color} borderBottom={hi < mergedHighlights.length - 1 ? "1px solid #F5F0EA" : "none"} />
                     ) : h.alternatives ? (
                       <div style={{ borderTop:"1px solid #F5F0EA" }}>
                         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, padding:"12px 12px" }}>
