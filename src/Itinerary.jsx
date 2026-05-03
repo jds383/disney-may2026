@@ -350,23 +350,27 @@ function isLLExpired(endTime, isoDate) {
 
 async function fetchBookedLLs() {
   try {
-    const res = await fetch(`${WORKER_URL}/bookings`);
+    const res = await fetch(`${WORKER_URL}/activities`);
     if (!res.ok) return [];
     const data = await res.json();
     if (!data.results) return [];
-    return data.results.map((page) => {
-      const props = page.properties;
-      return {
-        rideName:  props["Name"]?.title?.[0]?.text?.content ?? "",
-        rideId:    props["Ride ID"]?.rich_text?.[0]?.text?.content ?? "",
-        park:      props["Park"]?.select?.name ?? "",
-        date:      props["Date"]?.date?.start ?? "",
-        startTime: props["Start Time"]?.rich_text?.[0]?.text?.content ?? "",
-        endTime:   props["End Time"]?.rich_text?.[0]?.text?.content ?? "",
-        party:     props["Party"]?.rich_text?.[0]?.text?.content ?? "All",
-        type:      props["Type"]?.select?.name ?? "LL",
-      };
-    });
+    return data.results
+      .filter(page => !page.properties["HideInApp"]?.checkbox)
+      .map((page) => {
+        const props = page.properties;
+        return {
+          rideName:  props["Name"]?.title?.[0]?.text?.content ?? "",
+          rideId:    props["Ride ID"]?.rich_text?.[0]?.text?.content ?? "",
+          park:      props["Park"]?.select?.name ?? "",
+          date:      props["Date"]?.date?.start ?? "",
+          startTime: props["Start Time"]?.rich_text?.[0]?.text?.content ?? "",
+          endTime:   props["End Time"]?.rich_text?.[0]?.text?.content ?? "",
+          party:     props["Party"]?.rich_text?.[0]?.text?.content ?? "All",
+          type:      props["Type"]?.select?.name ?? "LL",
+          location:  props["Location"]?.rich_text?.[0]?.text?.content ?? "",
+          resort:    props["Resort"]?.select?.name ?? "",
+        };
+      });
   } catch (_) { return []; }
 }
 
@@ -490,8 +494,16 @@ function WeatherAlert({ weather }) {
 }
 
 // ── LLRow ─────────────────────────────────────────────────────────────────────
+const ACTIVITY_STYLES = {
+  "LL":             { bg: "#F0FFF4", badge: "⚡ LL",              badgeBg: "#D1FAE5", badgeColor: "#065F46", badgeBorder: "#6EE7B7" },
+  "Character Meet": { bg: "#F5F0FF", badge: "🧸 Meet",            badgeBg: "#EDE9FE", badgeColor: "#4C1D95", badgeBorder: "#C4B5FD" },
+  "Resort Activity":{ bg: "#F0F8FF", badge: "🏨 Resort",          badgeBg: "#DBEAFE", badgeColor: "#1E40AF", badgeBorder: "#93C5FD" },
+};
+
 function LLRow({ h, color, borderBottom }) {
-  const isMeet = h.entryType === "Character Meet";
+  const isMeet = h.type === "Character Meet";
+  const isResort = h.type === "Resort Activity";
+  const style = ACTIVITY_STYLES[h.type] || ACTIVITY_STYLES["LL"];
   const MEET_URLS = {
     "Meet Stitch (D. Visa)":           "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#stitchcharacterexperience",
     "Star Wars Photo (D. Visa)":       "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#starwarscharacterexperience",
@@ -499,24 +511,27 @@ function LLRow({ h, color, borderBottom }) {
   };
   const rideUrl = isMeet
     ? MEET_URLS[h.rideName] ?? RIDES.find(r => r.name === h.rideName)?.url ?? null
+    : isResort ? null
     : RIDES.find(r => r.id === h.rideId)?.url;
-  const location = isMeet ? h.rideId : null;
   const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "");
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
-  const fullText = `${timeStr} · ${h.rideName}${partyStr} ↗`;
+  const locationStr = h.location || (h.resort ? h.resort : null);
+  const fullText = `${timeStr} · ${h.rideName}${partyStr}${rideUrl ? " ↗" : ""}`;
   return (
-    <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom }}>
+    <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom, background: style.bg }}>
       <span style={{ fontSize:14, flexShrink:0, marginTop:2 }}>{h.icon}</span>
       <div style={{ flex:1 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
+          <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:8, background:style.badgeBg, color:style.badgeColor, border:`1px solid ${style.badgeBorder}`, whiteSpace:"nowrap" }}>{style.badge}</span>
+        </div>
         {rideUrl
           ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, display:"block", textAlign:"left" }}>{fullText}</a>
-          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText.replace(" ↗", "")}</span>
+          : <span style={{ fontSize:13, color:"#1A1A1A", fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText}</span>
         }
-        {location && (
-          <span style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:2, textAlign:"left" }}>{location}</span>
+        {locationStr && (
+          <span style={{ fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:2, textAlign:"left" }}>{locationStr}</span>
         )}
       </div>
-
     </div>
   );
 }
@@ -590,13 +605,15 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
       .map(ll => ({
         _type: "ll",
         sortTime: parseTimeToInt(ll.startTime),
-        icon: ll.type === "Character Meet" ? "🧸" : "⚡",
+        icon: ll.type === "Character Meet" ? "🧸" : ll.type === "Resort Activity" ? "🏨" : "⚡",
         rideName: ll.rideName,
         startTime: ll.startTime,
         endTime: ll.endTime,
         party: ll.party,
         rideId: ll.rideId,
-        entryType: ll.type,
+        type: ll.type,
+        location: ll.location,
+        resort: ll.resort,
       }));
     return [...base, ...llsForDay].sort((a, b) => (a.sortTime ?? 9999) - (b.sortTime ?? 9999));
   })();
