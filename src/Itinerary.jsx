@@ -530,7 +530,7 @@ function LLRow({ h, color, borderBottom, onSkip }) {
 
 // ── ViewToggle ─────────────────────────────────────────────────────────────────
 function ArchivedSection({ archivedLLs, onRestore }) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   if (!archivedLLs || archivedLLs.length === 0) return null;
   return (
     <div style={{ borderTop:"1px solid #EDE8E1" }}>
