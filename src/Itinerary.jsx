@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { ParkRides, Summary, RIDES, saveMetaToNotion, isClosed } from "./LLPlanner";
 
 const FLIGHTS = {
-  0: { flight: "AA2531", date: "2026-05-21", from: "PHL", to: "MCO", sched_dep: "5:50 PM", sched_arr: "8:46 PM" },
-  6: { flight: "AA810",  date: "2026-05-27", from: "MCO", to: "PHL", sched_dep: "3:51 PM", sched_arr: "6:35 PM" },
+  "2026-05-21": { flight: "AA2531", date: "2026-05-21", from: "PHL", to: "MCO", sched_dep: "5:50 PM", sched_arr: "8:46 PM" },
+  "2026-05-27": { flight: "AA810",  date: "2026-05-27", from: "MCO", to: "PHL", sched_dep: "3:51 PM", sched_arr: "6:35 PM" },
 };
 
 const STATUS_COLORS = {
@@ -33,8 +33,8 @@ const parseFlight = (data) => {
   } catch (_) { return null; }
 };
 
-function FlightStatus({ dayIndex, color }) {
-  const info = FLIGHTS[dayIndex];
+function FlightStatus({ weatherDate, color }) {
+  const info = FLIGHTS[weatherDate];
   const [live, setLive] = useState(null);
   const [spinning, setSpinning] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -828,7 +828,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                         )}
                         {h.reservations && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><ReservationBadges reservations={h.reservations} color={day.color} icon={h.icon} text={h.text} url={h.url} /></div>}
                         {h.quickService && <QuickServiceDining color={day.color} />}
-                        {h.flight && FLIGHTS[activeDay] && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><FlightStatus dayIndex={activeDay} color={day.color} /></div>}
+                        {h.flight && FLIGHTS[day.weatherDate] && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><FlightStatus weatherDate={day.weatherDate} color={day.color} /></div>}
                       </>
                     )}
                   </div>
