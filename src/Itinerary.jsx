@@ -493,9 +493,9 @@ function WeatherAlert({ weather }) {
 
 // ── LLRow ─────────────────────────────────────────────────────────────────────
 const ACTIVITY_STYLES = {
-  "LL":             { bg: "#F0FFF4", badge: "⚡ LL",       badgeBg: "#D1FAE5", badgeColor: "#065F46", badgeBorder: "#6EE7B7" },
-  "Character Meet": { bg: "#F5F0FF", badge: "🧸 Meet",     badgeBg: "#EDE9FE", badgeColor: "#4C1D95", badgeBorder: "#C4B5FD" },
-  "Resort Activity":{ bg: "#F0F8FF", badge: "🏨 Resort",   badgeBg: "#DBEAFE", badgeColor: "#1E40AF", badgeBorder: "#93C5FD" },
+  "LL":             { bg: "transparent", badge: "⚡ LL",       badgeBg: "#D1FAE5", badgeColor: "#065F46", badgeBorder: "#6EE7B7" },
+  "Character Meet": { bg: "transparent", badge: "🧸 Meet",     badgeBg: "#EDE9FE", badgeColor: "#4C1D95", badgeBorder: "#C4B5FD" },
+  "Resort Activity":{ bg: "transparent", badge: "🏨 Resort",   badgeBg: "#DBEAFE", badgeColor: "#1E40AF", badgeBorder: "#93C5FD" },
 };
 function LLRow({ h, color, borderBottom }) {
   const isMeet = h.type === "Character Meet";
@@ -517,9 +517,12 @@ function LLRow({ h, color, borderBottom }) {
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
   const fullText = `${timeStr} · ${h.rideName}${partyStr}${rideUrl ? " ↗" : ""}`;
   return (
-    <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom, background: style.bg }}>
+    <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"6px 22px", borderBottom, background: style.bg }}>
       <span style={{ fontSize:14, flexShrink:0, marginTop:2 }}>{h.icon}</span>
       <div style={{ flex:1 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:1 }}>
+          <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:8, background:style.badgeBg, color:style.badgeColor, border:`1px solid ${style.badgeBorder}`, whiteSpace:"nowrap" }}>{style.badge}</span>
+        </div>
         {rideUrl
           ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, display:"block", textAlign:"left" }}>{fullText}</a>
           : <span style={{ fontSize:13, color:"#1A1A1A", fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText}</span>
