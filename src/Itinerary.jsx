@@ -510,7 +510,9 @@ function LLRow({ h, color, borderBottom }) {
     ? MEET_URLS[h.rideName] ?? RIDES.find(r => r.name === h.rideName)?.url ?? null
     : isResort ? null
     : RIDES.find(r => r.id === h.rideId)?.url;
-  const locationStr = h.location || (h.resort ? h.resort : null);
+  const locationStr = h.resort
+    ? (h.location ? `${h.resort} · ${h.location}` : h.resort)
+    : (h.location || null);
   const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "");
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
   const fullText = `${timeStr} · ${h.rideName}${partyStr}${rideUrl ? " ↗" : ""}`;
