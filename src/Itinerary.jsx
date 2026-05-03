@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { ParkRides, Summary, RIDES, saveMetaToNotion, isClosed } from "./LLPlanner";
 
 const FLIGHTS = {
-  "2026-05-21": { flight: "AA2531", date: "2026-05-21", from: "PHL", to: "MCO", sched_dep: "5:50 PM", sched_arr: "8:46 PM" },
-  "2026-05-27": { flight: "AA810",  date: "2026-05-27", from: "MCO", to: "PHL", sched_dep: "3:51 PM", sched_arr: "6:35 PM" },
+  0: { flight: "AA2531", date: "2026-05-21", from: "PHL", to: "MCO", sched_dep: "5:50 PM", sched_arr: "8:46 PM" },
+  6: { flight: "AA810",  date: "2026-05-27", from: "MCO", to: "PHL", sched_dep: "3:51 PM", sched_arr: "6:35 PM" },
 };
 
 const STATUS_COLORS = {
@@ -33,8 +33,8 @@ const parseFlight = (data) => {
   } catch (_) { return null; }
 };
 
-function FlightStatus({ weatherDate, color }) {
-  const info = FLIGHTS[weatherDate];
+function FlightStatus({ dayIndex, color }) {
+  const info = FLIGHTS[dayIndex];
   const [live, setLive] = useState(null);
   const [spinning, setSpinning] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -497,15 +497,8 @@ function WeatherAlert({ weather }) {
 }
 
 // ── LLRow ─────────────────────────────────────────────────────────────────────
-const ACTIVITY_STYLES = {
-  "LL":             { bg: "transparent", badge: "⚡ LL",       badgeBg: "#D1FAE5", badgeColor: "#065F46", badgeBorder: "#6EE7B7" },
-  "Character Meet": { bg: "transparent", badge: "🧸 Meet",     badgeBg: "#EDE9FE", badgeColor: "#4C1D95", badgeBorder: "#C4B5FD" },
-  "Resort Activity":{ bg: "transparent", badge: "🏨 Resort",   badgeBg: "#DBEAFE", badgeColor: "#1E40AF", badgeBorder: "#93C5FD" },
-};
 function LLRow({ h, color, borderBottom, onSkip }) {
-  const isMeet = h.type === "Character Meet";
-  const isResort = h.type === "Resort Activity";
-  const style = ACTIVITY_STYLES[h.type] || ACTIVITY_STYLES["LL"];
+  const isMeet = h.entryType === "Character Meet";
   const MEET_URLS = {
     "Meet Stitch (D. Visa)":           "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#stitchcharacterexperience",
     "Star Wars Photo (D. Visa)":       "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#starwarscharacterexperience",
@@ -513,33 +506,29 @@ function LLRow({ h, color, borderBottom, onSkip }) {
   };
   const rideUrl = isMeet
     ? MEET_URLS[h.rideName] ?? RIDES.find(r => r.name === h.rideName)?.url ?? null
-    : isResort ? null
     : RIDES.find(r => r.id === h.rideId)?.url;
-  const locationStr = h.resort
-    ? (h.location ? `${h.resort} · ${h.location}` : h.resort)
-    : (h.location || null);
+  const location = isMeet ? h.rideId : null;
   const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "");
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
-  const fullText = `${timeStr} · ${h.rideName}${partyStr}${rideUrl ? " ↗" : ""}`;
+  const fullText = `${timeStr} · ${h.rideName}${partyStr} ↗`;
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 22px", borderBottom, background: style.bg }}>
-      <span style={{ fontSize:14, flexShrink:0 }}>{h.icon}</span>
+    <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom }}>
+      <span style={{ fontSize:14, flexShrink:0, marginTop:2 }}>{h.icon}</span>
       <div style={{ flex:1 }}>
         {rideUrl
           ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, display:"block", textAlign:"left" }}>{fullText}</a>
-          : <span style={{ fontSize:13, color:"#1A1A1A", fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText}</span>
+          : <span style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText.replace(" ↗", "")}</span>
         }
-        {locationStr && (
-          <span style={{ fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:1, textAlign:"left" }}>{locationStr}</span>
+        {location && (
+          <span style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:2, textAlign:"left" }}>{location}</span>
         )}
       </div>
-      {h.optional && onSkip && (
-        <button onClick={() => onSkip(h.pageId)} style={{ fontSize:10, color:"#AAA", background:"none", border:"1px solid #EDE8E1", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Skip</button>
-      )}
+
     </div>
   );
 }
 
+// ── ViewToggle ─────────────────────────────────────────────────────────────────
 function ArchivedSection({ archivedLLs, onRestore }) {
   const [open, setOpen] = React.useState(false);
   if (!archivedLLs || archivedLLs.length === 0) return null;
@@ -570,6 +559,7 @@ function ArchivedSection({ archivedLLs, onRestore }) {
     </div>
   );
 }
+
 function ViewToggle({ view, setView }) {
   return (
     <div style={{
@@ -630,7 +620,6 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
     fetchBookedLLs().then(setBookedLLs).catch(() => {});
   }, []);
 
-  // Merge highlights with booked LLs for the current day, sorted by time
   const updateVisibility = async (pageId, visibility) => {
     try {
       await fetch(`${WORKER_URL}/activities`, {
@@ -642,27 +631,33 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
     } catch (_) {}
   };
 
-  const allLLsForDay = bookedLLs.filter(ll => ll.date === day.isoDate);
+  // Merge highlights with booked LLs for the current day, sorted by time
+  const mergedHighlights = (() => {
+    const base = day.highlights.map(h => ({ ...h, _type: "highlight" }));
+    const llsForDay = bookedLLs
+      .filter(ll => ll.date === day.isoDate && (ll.visibility === "Show" || !ll.visibility) && !isLLExpired(ll.endTime, ll.date))
+      .map(ll => ({
+        _type: "ll",
+        sortTime: parseTimeToInt(ll.startTime),
+        icon: ll.type === "Character Meet" ? "🧸" : ll.type === "Resort Activity" ? "🏨" : "⚡",
+        rideName: ll.rideName,
+        startTime: ll.startTime,
+        endTime: ll.endTime,
+        party: ll.party,
+        rideId: ll.rideId,
+        type: ll.type,
+        location: ll.location,
+        resort: ll.resort,
+        optional: ll.optional,
+        visibility: ll.visibility,
+        pageId: ll.pageId,
+      }));
+    return [...base, ...llsForDay].sort((a, b) => (a.sortTime ?? 9999) - (b.sortTime ?? 9999));
+  })();
 
-  const activeLLs = allLLsForDay
-    .filter(ll => ll.visibility === "Show" && !isLLExpired(ll.endTime, ll.date))
-    .map(ll => ({
-      _type: "ll",
-      sortTime: parseTimeToInt(ll.startTime),
-      icon: ll.type === "Character Meet" ? "🧸" : ll.type === "Resort Activity" ? "🏨" : "⚡",
-      rideName: ll.rideName, startTime: ll.startTime, endTime: ll.endTime,
-      party: ll.party, rideId: ll.rideId, type: ll.type,
-      location: ll.location, resort: ll.resort,
-      optional: ll.optional, visibility: ll.visibility, pageId: ll.pageId,
-    }));
-
-  const archivedLLs = allLLsForDay.filter(ll =>
-    ll.visibility === "Archive" || isLLExpired(ll.endTime, ll.date)
+  const archivedLLs = bookedLLs.filter(ll =>
+    ll.date === day.isoDate && (ll.visibility === "Archive" || isLLExpired(ll.endTime, ll.date))
   );
-
-  const base = day.highlights.map(h => ({ ...h, _type: "highlight" }));
-  const mergedHighlights = [...base, ...activeLLs]
-    .sort((a, b) => (a.sortTime ?? 9999) - (b.sortTime ?? 9999));
 
   const swipeStart = useRef(null);
   const scrollStripRef = useRef(null);
@@ -828,7 +823,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                         )}
                         {h.reservations && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><ReservationBadges reservations={h.reservations} color={day.color} icon={h.icon} text={h.text} url={h.url} /></div>}
                         {h.quickService && <QuickServiceDining color={day.color} />}
-                        {h.flight && FLIGHTS[day.weatherDate] && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><FlightStatus weatherDate={day.weatherDate} color={day.color} /></div>}
+                        {h.flight && FLIGHTS[activeDay] && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><FlightStatus dayIndex={activeDay} color={day.color} /></div>}
                       </>
                     )}
                   </div>
@@ -836,7 +831,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
               </div>
             </div>
 
-            {/* Past & Declined — collapsed section, only shown when non-empty */}
+            {/* Past & Declined */}
             <ArchivedSection archivedLLs={archivedLLs} onRestore={(pageId) => updateVisibility(pageId, "Show")} />
 
             {/* LL sections below tile — park days only */}
