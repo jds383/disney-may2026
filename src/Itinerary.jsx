@@ -540,7 +540,36 @@ function LLRow({ h, color, borderBottom, onSkip }) {
   );
 }
 
-// ── ViewToggle ─────────────────────────────────────────────────────────────────
+function ArchivedSection({ archivedLLs, onRestore }) {
+  const [open, setOpen] = React.useState(false);
+  if (!archivedLLs || archivedLLs.length === 0) return null;
+  return (
+    <div style={{ borderTop:"1px solid #EDE8E1" }}>
+      <div onClick={() => setOpen(o => !o)} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 22px", cursor:"pointer", background:"#FAFAF8" }}>
+        <span style={{ fontSize:12, color:"#AAA", fontFamily:"'DM Sans',sans-serif" }}>Past & Declined ({archivedLLs.length})</span>
+        <span style={{ fontSize:10, color:"#CCC", transform:open?"rotate(180deg)":"none", transition:"transform 0.2s" }}>▾</span>
+      </div>
+      {open && (
+        <div style={{ padding:"4px 0 8px" }}>
+          {archivedLLs.map((ll, i) => {
+            const timeStr = ll.startTime + (ll.endTime ? ` – ${ll.endTime}` : "");
+            const locationStr = ll.resort ? (ll.location ? `${ll.resort} · ${ll.location}` : ll.resort) : ll.location;
+            return (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 22px", borderBottom:i<archivedLLs.length-1?"1px solid #F5F0EA":"none", opacity:0.5 }}>
+                <span style={{ fontSize:13 }}>{ll.type === "Character Meet" ? "🧸" : ll.type === "Resort Activity" ? "🏨" : "⚡"}</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:12, color:"#555", fontFamily:"'DM Sans',sans-serif" }}>{timeStr} · {ll.rideName}</div>
+                  {locationStr && <div style={{ fontSize:10, color:"#AAA", fontFamily:"'DM Sans',sans-serif" }}>{locationStr}</div>}
+                </div>
+                <button onClick={() => onRestore(ll.pageId)} style={{ fontSize:10, color:"#4A7C59", background:"none", border:"1px solid #B7DFC8", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Restore</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 function ViewToggle({ view, setView }) {
   return (
     <div style={{
@@ -808,35 +837,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
             </div>
 
             {/* Past & Declined — collapsed section, only shown when non-empty */}
-            {archivedLLs.length > 0 && (() => {
-              const [archiveOpen, setArchiveOpen] = React.useState(false);
-              return (
-                <div style={{ borderTop:"1px solid #EDE8E1" }}>
-                  <div onClick={() => setArchiveOpen(o => !o)} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 22px", cursor:"pointer", background:"#FAFAF8" }}>
-                    <span style={{ fontSize:12, color:"#AAA", fontFamily:"'DM Sans',sans-serif" }}>Past & Declined ({archivedLLs.length})</span>
-                    <span style={{ fontSize:10, color:"#CCC", transform:archiveOpen?"rotate(180deg)":"none", transition:"transform 0.2s" }}>▾</span>
-                  </div>
-                  {archiveOpen && (
-                    <div style={{ padding:"4px 0 8px" }}>
-                      {archivedLLs.map((ll, i) => {
-                        const timeStr = ll.startTime + (ll.endTime ? ` – ${ll.endTime}` : "");
-                        const locationStr = ll.resort ? (ll.location ? `${ll.resort} · ${ll.location}` : ll.resort) : ll.location;
-                        return (
-                          <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 22px", borderBottom:i<archivedLLs.length-1?"1px solid #F5F0EA":"none", opacity:0.5 }}>
-                            <span style={{ fontSize:13 }}>{ll.type === "Character Meet" ? "🧸" : ll.type === "Resort Activity" ? "🏨" : "⚡"}</span>
-                            <div style={{ flex:1 }}>
-                              <div style={{ fontSize:12, color:"#555", fontFamily:"'DM Sans',sans-serif" }}>{timeStr} · {ll.rideName}</div>
-                              {locationStr && <div style={{ fontSize:10, color:"#AAA", fontFamily:"'DM Sans',sans-serif" }}>{locationStr}</div>}
-                            </div>
-                            <button onClick={() => updateVisibility(ll.pageId, "Show")} style={{ fontSize:10, color:"#4A7C59", background:"none", border:"1px solid #B7DFC8", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Restore</button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+            <ArchivedSection archivedLLs={archivedLLs} onRestore={(pageId) => updateVisibility(pageId, "Show")} />
 
             {/* LL sections below tile — park days only */}
             {day.parkId && (
