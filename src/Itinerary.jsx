@@ -680,7 +680,9 @@ function LLRow({ h, color, borderBottom, onSkip }) {
   const location = isMeet ? (h.subtext || h.location || null) : null;
   const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "");
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
-  const fullText = `${timeStr} · ${h.rideName}${partyStr} ↗`;
+  const fullText = isMeet
+    ? `${h.rideName}${partyStr} ↗`
+    : `${timeStr} · ${h.rideName}${partyStr} ↗`;
   return (
     <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding: h.optional ? "7px 22px 7px 34px" : "8px 22px", borderBottom, opacity: h.optional ? 0.75 : 1 }}>
       <span style={{ fontSize:14, flexShrink:0, marginTop:2 }}>{h.icon}</span>
