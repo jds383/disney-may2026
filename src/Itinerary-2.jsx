@@ -321,114 +321,6 @@ const days = [
 
 const WORKER_URL = "https://disney-ll-proxy.45-reactor-puritan.workers.dev";
 
-// ── Design mappings (color and emoji derived from Day Type + Park ID) ──────────
-const PARK_COLORS = {
-  mk: "#1A6B4A", ep: "#4A2C6B", hs: "#8A3A2C", ak: "#2E6B3A",
-};
-const DAY_TYPE_COLORS = {
-  Travel: "#2C5F8A", Resort: "#7B4F2E", Park: null, // Park uses PARK_COLORS
-};
-const PARK_EMOJIS = { mk: "🏰", ep: "🌐", hs: "🎬", ak: "🦁" };
-const DAY_TYPE_EMOJIS = { Travel: null, Resort: "🌴", Park: null };
-
-// Weather coords per location
-const LOCATION_WEATHER = {
-  "Villas at Grand Floridian":          { lat: 28.4104, lon: -81.5868 },
-  "Polynesian Villas & Bungalows":      { lat: 28.4094, lon: -81.5840 },
-  "Riviera Resort":                     { lat: 28.3613, lon: -81.5588 },
-  "Art of Animation":                   { lat: 28.3564, lon: -81.5578 },
-  "Pop Century":                        { lat: 28.3553, lon: -81.5585 },
-  "BoardWalk Inn":                      { lat: 28.3694, lon: -81.5491 },
-  "Yacht Club":                         { lat: 28.3683, lon: -81.5490 },
-  "Contemporary Resort":                { lat: 28.4152, lon: -81.5734 },
-  "Grand Floridian":                    { lat: 28.4104, lon: -81.5868 },
-  "Animal Kingdom Lodge":               { lat: 28.3569, lon: -81.6022 },
-};
-
-// Park weather coords
-const PARK_WEATHER = {
-  mk: { lat: 28.4177, lon: -81.5812 },
-  ep: { lat: 28.3747, lon: -81.5494 },
-  hs: { lat: 28.3575, lon: -81.5583 },
-  ak: { lat: 28.3589, lon: -81.5901 },
-};
-
-function dayOfWeekAbbr(isoDate) {
-  const d = new Date(isoDate + "T12:00:00");
-  return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
-}
-
-function monthAbbr(isoDate) {
-  const d = new Date(isoDate + "T12:00:00");
-  return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
-}
-
-function parseFrameworkDay(page, index) {
-  const props = page.properties;
-  const name        = props["Name"]?.title?.[0]?.plain_text ?? "";
-  const isoDate     = props["Date"]?.date?.start ?? "";
-  const dayType     = props["Day Type"]?.select?.name ?? "Travel";
-  const parkId      = props["Park ID"]?.select?.name ?? null;
-  const locStart    = props["Location Start"]?.rich_text?.[0]?.plain_text ?? "";
-  const locEnd      = props["Location End"]?.rich_text?.[0]?.plain_text ?? "";
-
-  // Derive color
-  const color = parkId ? (PARK_COLORS[parkId] ?? "#2C5F8A") : (DAY_TYPE_COLORS[dayType] ?? "#2C5F8A");
-
-  // Derive emoji — Travel days use arrival vs departure
-  let emoji = PARK_EMOJIS[parkId] ?? DAY_TYPE_EMOJIS[dayType] ?? "📅";
-  if (dayType === "Travel") {
-    emoji = locStart === "Home" ? "✈️" : "🏠";
-  }
-
-  // Derive hotel display string
-  const hotel = locStart === locEnd ? locEnd : `${locStart} → ${locEnd}`;
-
-  // Derive weather coords — prefer park location on park days, else use end location
-  let weatherLat, weatherLon;
-  if (parkId && PARK_WEATHER[parkId]) {
-    weatherLat = PARK_WEATHER[parkId].lat;
-    weatherLon = PARK_WEATHER[parkId].lon;
-  } else {
-    const loc = LOCATION_WEATHER[locEnd] ?? LOCATION_WEATHER[locStart];
-    weatherLat = loc?.lat ?? 28.3613;
-    weatherLon = loc?.lon ?? -81.5588;
-  }
-
-  // Derive date display string (e.g. "Thu May 21")
-  const dow = dayOfWeekAbbr(isoDate);
-  const mon = monthAbbr(isoDate);
-  const dayNum = parseInt(isoDate.split("-")[2]);
-  const dateDisplay = `${dow} ${mon} ${dayNum}`;
-
-  return {
-    date: dateDisplay,
-    label: name,
-    hotel,
-    weatherDate: isoDate,
-    weatherLat,
-    weatherLon,
-    isoDate,
-    rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }],
-    color,
-    emoji,
-    parkId,
-    highlights: [], // highlights still come from hardcoded days array for now
-  };
-}
-
-async function fetchFramework() {
-  try {
-    const res = await fetch(`${WORKER_URL}/framework`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!data.results?.length) return null;
-    return data.results.map((page, i) => parseFrameworkDay(page, i));
-  } catch (_) { return null; }
-}
-
-
-
 // Parse "9:15 AM" → sortable integer 915, "10:30 PM" → 2230
 function parseTimeToInt(str) {
   if (!str) return 9999;
@@ -718,18 +610,6 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   const day = days[activeDay];
   const [rooms, setRooms] = useState({});
   const [bookedLLs, setBookedLLs] = useState([]);
-  const [frameworkDays, setFrameworkDays] = useState(null); // null = loading, [] = failed
-
-  // Merge framework days (from Notion) with hardcoded highlights
-  const activeDays = (frameworkDays ?? days).map((fd, i) => {
-    const hardcoded = days[i];
-    return {
-      ...fd,
-      highlights: hardcoded?.highlights ?? fd.highlights,
-    };
-  });
-  const day = activeDays[activeDay] ?? days[activeDay];
-
   const { weather, error: weatherError } = useWeather(day.weatherDate, day.weatherLat, day.weatherLon);
 
   useEffect(() => {
@@ -738,12 +618,6 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
 
   useEffect(() => {
     fetchBookedLLs().then(setBookedLLs).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    fetchFramework().then((result) => {
-      if (result) setFrameworkDays(result);
-    }).catch(() => {});
   }, []);
 
   const updateVisibility = async (pageId, visibility) => {
@@ -799,7 +673,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
     strip.scrollTo({ left: pillCenter - stripCenter, behavior: "smooth" });
   }, [activeDay]);
 
-  const goTo = (i) => setActiveDay(Math.max(0, Math.min(activeDays.length - 1, i)));
+  const goTo = (i) => setActiveDay(Math.max(0, Math.min(days.length - 1, i)));
   const onPointerDown = (e) => { swipeStart.current = e.clientX; };
   const onPointerUp = (e) => {
     if (swipeStart.current === null) return;
@@ -847,12 +721,12 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
         }}>
           {/* Date pills — scrollable, active day shown as dot */}
           <div ref={scrollStripRef} style={{ flex: 1, display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2, scrollbarWidth: "none" }}>
-            {activeDays.map((d, i) => {
+            {days.map((d, i) => {
               const parts = d.date.split(" "); const num = parseInt(parts[2]);
               const s = [1,21].includes(num)?"st":[2,22].includes(num)?"nd":[3,23].includes(num)?"rd":"th";
               const isActive = activeDay === i;
               return isActive ? (
-                <div key={i} ref={activePillRef} style={{ flexShrink: 0, width: 28, height: 28, borderRadius: "50%", background: activeDays[i]?.color ?? days[i].color, display: "flex", alignItems: "center", justifyContent: "center", alignSelf: "center" }}>
+                <div key={i} ref={activePillRef} style={{ flexShrink: 0, width: 28, height: 28, borderRadius: "50%", background: days[i].color, display: "flex", alignItems: "center", justifyContent: "center", alignSelf: "center" }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "rgba(255,255,255,0.9)" }} />
                 </div>
               ) : (
