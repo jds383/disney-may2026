@@ -484,20 +484,42 @@ async function fetchActivities() {
         const sortTime  = props["Sort Time"]?.number ?? parseTimeToInt(startTime);
         const pageId    = page.id;
 
-        // LL and Character Meet types map to the existing booked LL flow
-        if (type === "LL" || type === "Character Meet") {
+        // LL type maps to the booked LL flow
+        if (type === "LL") {
           return {
             _source: "notion",
             _type: "ll",
             date,
             sortTime,
-            icon: icon || (type === "Character Meet" ? "🧸" : "⚡"),
+            icon: icon || "⚡",
             rideName: name,
             startTime,
             endTime,
             party,
-            rideId: location, // location field holds ride ID for LLs
+            rideId: location,
             entryType: type,
+            url,
+            optional,
+            pageId,
+          };
+        }
+
+        // Character Meet maps to highlight flow with meet styling
+        if (type === "Character Meet") {
+          return {
+            _source: "notion",
+            _type: "ll", // still uses LLRow for time+name inline display
+            date,
+            sortTime,
+            icon: icon || "🧸",
+            rideName: name,
+            startTime,
+            endTime,
+            party,
+            rideId: location,
+            entryType: type,
+            url,
+            subtext: subtext || location || undefined,
             optional,
             pageId,
           };
@@ -654,15 +676,8 @@ function WeatherAlert({ weather }) {
 // ── LLRow ─────────────────────────────────────────────────────────────────────
 function LLRow({ h, color, borderBottom, onSkip }) {
   const isMeet = h.entryType === "Character Meet";
-  const MEET_URLS = {
-    "Meet Stitch (D. Visa)":           "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#stitchcharacterexperience",
-    "Star Wars Photo (D. Visa)":       "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#starwarscharacterexperience",
-    "Mystery Character Meet (D. Visa)":"https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#characterexperience",
-  };
-  const rideUrl = isMeet
-    ? MEET_URLS[h.rideName] ?? RIDES.find(r => r.name === h.rideName)?.url ?? null
-    : RIDES.find(r => r.id === h.rideId)?.url;
-  const location = isMeet ? h.rideId : null;
+  const rideUrl = h.url || (isMeet ? null : RIDES.find(r => r.id === h.rideId)?.url);
+  const location = isMeet ? (h.subtext || h.location || null) : null;
   const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "");
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
   const fullText = `${timeStr} · ${h.rideName}${partyStr} ↗`;
