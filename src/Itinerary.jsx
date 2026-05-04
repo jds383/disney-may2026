@@ -667,7 +667,7 @@ function LLRow({ h, color, borderBottom, onSkip }) {
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
   const fullText = `${timeStr} · ${h.rideName}${partyStr} ↗`;
   return (
-    <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom }}>
+    <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding: h.optional ? "7px 22px 7px 34px" : "8px 22px", borderBottom, opacity: h.optional ? 0.75 : 1 }}>
       <span style={{ fontSize:14, flexShrink:0, marginTop:2 }}>{h.icon}</span>
       <div style={{ flex:1 }}>
         {rideUrl
@@ -994,11 +994,11 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                     ) : (
                       <>
                         {!h.reservations && (
-                          <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}>
+                          <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding: h.optional ? "7px 22px 7px 34px" : "8px 22px", borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none", opacity: h.optional ? 0.75 : 1 }}>
                             <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
                             <div style={{ flex:1, textAlign:"left" }}>
                               {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
-                              {h.subtext && <div style={{ fontSize:11, color:"#AAA", marginTop:2, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
+                              {h.subtext && <div style={{ fontSize:10, color:"#BBB", marginTop:1, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
                             </div>
                           </div>
                         )}
