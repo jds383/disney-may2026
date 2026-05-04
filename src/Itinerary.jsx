@@ -1,100 +1,112 @@
 import { useState, useEffect, useRef } from "react";
 import { ParkRides, Summary, RIDES, saveMetaToNotion, isClosed } from "./LLPlanner";
 
-const FLIGHTS = {
-  0: { flight: "AA2531", date: "2026-05-21", from: "PHL", to: "MCO", sched_dep: "5:50 PM", sched_arr: "8:46 PM" },
-  6: { flight: "AA810",  date: "2026-05-27", from: "MCO", to: "PHL", sched_dep: "3:51 PM", sched_arr: "6:35 PM" },
-};
-
 const STATUS_COLORS = {
   "Scheduled": "#2C5F8A", "On Time": "#1A6B4A", "Delayed": "#C8832A",
   "Cancelled": "#CC4444", "Landed": "#4A2C6B", "En Route": "#1A6B4A",
 };
 
-const fmt = (iso) => {
+const fmtIso = (iso) => {
   try { return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }); }
-  catch (_) { return "—"; }
+  catch (_) { return null; }
 };
 
-const parseFlight = (data) => {
-  try {
-    const f = data?.data?.[0];
-    if (!f) return null;
-    return {
-      status: f.flight_status ? f.flight_status.charAt(0).toUpperCase() + f.flight_status.slice(1) : "Unknown",
-      gate_dep: f.departure?.gate || "—",
-      gate_arr: f.arrival?.gate || "—",
-      terminal_dep: f.departure?.terminal || "—",
-      terminal_arr: f.arrival?.terminal || "—",
-      actual_dep: fmt(f.departure?.actual || f.departure?.estimated),
-      actual_arr: fmt(f.arrival?.actual || f.arrival?.estimated),
-      live: true,
-    };
-  } catch (_) { return null; }
-};
+// h = the flight activity object from Notion (has text, startTime, endTime, location, date)
+function FlightStatus({ h, color }) {
+  const flightNum = h?.location?.trim(); // e.g. "AA2531"
+  const schedDep  = h?.startTime || "";
+  const schedArr  = h?.endTime   || "";
+  const flightDate = h?.date     || "";
+  const label     = h?.text?.replace(/^[\d:APM\s–·]+/, "").trim() || h?.text || "";
 
-function FlightStatus({ dayIndex, color }) {
-  const info = FLIGHTS[dayIndex];
   const [live, setLive] = useState(null);
   const [spinning, setSpinning] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(null);
+  const [checkState, setCheckState] = useState(null); // null | "live" | "not-yet" | "failed"
+  const [checkedAt, setCheckedAt] = useState(null);
+
+  const nowStamp = () => new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
   const fetchData = async () => {
-    if (!info) return;
+    if (!flightNum || !flightDate) return;
     setSpinning(true);
     const today = new Date().toISOString().split("T")[0];
-    if (today !== info.date) {
-      await new Promise(r => setTimeout(r, 600));
-      setLastUpdated(`as of: ${new Date().toLocaleDateString("en-US", { month: "numeric", day: "2-digit" })} ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} · no live data yet`);
+    if (today !== flightDate) {
+      setCheckState("not-yet");
+      setCheckedAt(nowStamp());
       setSpinning(false);
       return;
     }
     try {
-      const res = await fetch(`https://api.aviationstack.com/v1/flights?access_key=DEMO&flight_iata=${info.flight}&flight_date=${info.date}`);
+      const res = await fetch(`https://api.aviationstack.com/v1/flights?access_key=DEMO&flight_iata=${flightNum}&flight_date=${flightDate}`);
       const data = await res.json();
-      const parsed = parseFlight(data);
-      if (parsed) setLive(parsed);
-      setLastUpdated(`as of: ${new Date().toLocaleDateString("en-US", { month: "numeric", day: "2-digit" })} ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`);
-    } catch (_) { setLastUpdated("check failed"); }
+      const f = data?.data?.[0];
+      if (f) {
+        setLive({
+          status:       f.flight_status ? f.flight_status.charAt(0).toUpperCase() + f.flight_status.slice(1) : "Unknown",
+          from:         f.departure?.iata || "—",
+          to:           f.arrival?.iata   || "—",
+          gate_dep:     f.departure?.gate     || "—",
+          gate_arr:     f.arrival?.gate       || "—",
+          terminal_dep: f.departure?.terminal || "—",
+          terminal_arr: f.arrival?.terminal   || "—",
+          actual_dep:   fmtIso(f.departure?.actual || f.departure?.estimated) || schedDep,
+          actual_arr:   fmtIso(f.arrival?.actual   || f.arrival?.estimated)   || schedArr,
+        });
+        setCheckState("live");
+      } else {
+        setCheckState("not-yet");
+      }
+      setCheckedAt(nowStamp());
+    } catch (_) {
+      setCheckState("failed");
+      setCheckedAt(nowStamp());
+    }
     setSpinning(false);
   };
 
   useEffect(() => { fetchData(); }, []);
 
-  if (!info) return null;
+  if (!flightNum) return null;
 
-  const d = live || { status: "Scheduled", gate_dep: "—", gate_arr: "—", terminal_dep: "—", terminal_arr: "—", actual_dep: info.sched_dep, actual_arr: info.sched_arr, live: false };
+  const d = live || { status: "Scheduled", from: "—", to: "—", gate_dep: "—", gate_arr: "—", terminal_dep: "—", terminal_arr: "—", actual_dep: schedDep, actual_arr: schedArr };
   const statusColor = STATUS_COLORS[d.status] || "#888";
-  const isLive = d.live;
+
+  const dotColor = checkState === "live" ? "#27AE60" : checkState === "failed" ? "#CC4444" : "#CCC";
+  const dotGlow  = checkState === "live" ? "0 0 4px #27AE60" : checkState === "failed" ? "0 0 4px #CC4444" : "none";
+  const checkLabel = checkState === "live"     ? `Updated ${checkedAt}`
+                   : checkState === "not-yet"  ? `Checked ${checkedAt} · not yet available`
+                   : checkState === "failed"   ? `Check failed ${checkedAt}`
+                   : "Checking...";
+
+  const tg = (t, g) => [t !== "—" ? `T-${t}` : null, g !== "—" ? `G-${g}` : null].filter(Boolean).join(" · ") || "—";
 
   return (
-    <div style={{ margin: "0", borderTop: "1px solid rgba(0,0,0,0.06)", background: "#FAFAF8" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 22px 6px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: "bold", color: "#1A1A1A", fontFamily: "'DM Sans', sans-serif" }}>{info.flight}</span>
-          <span style={{ fontSize: 11, color: "#888" }}>{info.from} → {info.to}</span>
-          <span style={{ fontSize: 10, background: statusColor + "22", color: statusColor, border: `1px solid ${statusColor}44`, borderRadius: 20, padding: "1px 8px", fontFamily: "'DM Sans', sans-serif" }}>{d.status}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 5, height: 5, borderRadius: "50%", background: isLive ? "#27AE60" : "#CCC", boxShadow: isLive ? "0 0 4px #27AE60" : "none" }} />
-          <span style={{ fontSize: 9, color: "#AAA", fontFamily: "'DM Sans', sans-serif" }}>
-            {lastUpdated || `as of: ${new Date().toLocaleDateString("en-US", { month: "numeric", day: "2-digit" })} ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} · no live data yet`}
-          </span>
-          <button onClick={e => { e.stopPropagation(); fetchData(); }} style={{ fontSize: 13, background: "none", border: "none", cursor: "pointer", color: "#BBB", padding: "0 2px", lineHeight: 1, display: "inline-flex", alignItems: "center", transform: spinning ? "rotate(180deg)" : "none", transition: "transform 0.4s ease" }}>↻</button>
-        </div>
+    <div style={{ padding: "9px 22px 10px", borderTop: "1px solid #F5F0EA", background: "#FAFAF8" }}>
+      {/* Row 1: label, flight, route, status, refresh */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+        <span style={{ fontSize: 13, color: "#2A2A2A", fontFamily: "'DM Sans',sans-serif", flex: 1 }}>
+          {label && <span style={{ fontWeight: 500 }}>{label} · </span>}
+          <span style={{ color: "#888" }}>{flightNum}</span>
+          {live && <span style={{ color: "#AAA", fontSize: 12 }}> · {d.from} → {d.to}</span>}
+        </span>
+        <span style={{ fontSize: 10, background: statusColor + "22", color: statusColor, border: `1px solid ${statusColor}44`, borderRadius: 20, padding: "1px 8px", fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>{d.status}</span>
+        <button onClick={e => { e.stopPropagation(); fetchData(); }} style={{ fontSize: 13, background: "none", border: "none", cursor: "pointer", color: "#BBB", padding: "0 2px", lineHeight: 1, flexShrink: 0, transform: spinning ? "rotate(180deg)" : "none", transition: "transform 0.4s ease" }}>↻</button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "0 22px 12px", gap: "4px 0" }}>
-        {[
-          { label: "Sched Dep", val: info.sched_dep }, { label: "Sched Arr", val: info.sched_arr },
-          { label: "Actual Dep", val: d.actual_dep },  { label: "Actual Arr", val: d.actual_arr },
-          { label: "Terminal (Dep)", val: d.terminal_dep }, { label: "Terminal (Arr)", val: d.terminal_arr },
-          { label: "Gate (Dep)", val: d.gate_dep },    { label: "Gate (Arr)", val: d.gate_arr },
-        ].map(({ label, val }) => (
-          <div key={label} style={{ padding: "4px 0" }}>
-            <div style={{ fontSize: 9, color: "#AAA", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</div>
-            <div style={{ fontSize: 14, color: val === "—" ? "#DDD" : "#1A1A1A" }}>{val}</div>
-          </div>
-        ))}
+      {/* Row 2: dep time + terminal/gate → arr time + terminal/gate */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontFamily: "'DM Sans',sans-serif", color: "#444" }}>
+        <span style={{ fontWeight: 500 }}>{d.actual_dep}</span>
+        <span style={{ fontSize: 10, color: "#AAA" }}>{tg(d.terminal_dep, d.gate_dep)}</span>
+        <span style={{ color: "#CCC", margin: "0 2px" }}>→</span>
+        <span style={{ fontWeight: 500 }}>{d.actual_arr}</span>
+        <span style={{ fontSize: 10, color: "#AAA" }}>{tg(d.terminal_arr, d.gate_arr)}</span>
+        {schedDep && d.actual_dep !== schedDep && (
+          <span style={{ fontSize: 10, color: "#AAA", marginLeft: 4 }}>sched {schedDep}→{schedArr}</span>
+        )}
+      </div>
+      {/* Row 3: status timestamp */}
+      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 4 }}>
+        <div style={{ width: 5, height: 5, borderRadius: "50%", background: dotColor, boxShadow: dotGlow, flexShrink: 0 }} />
+        <span style={{ fontSize: 9, color: "#BBB", fontFamily: "'DM Sans',sans-serif" }}>{checkLabel}</span>
       </div>
     </div>
   );
@@ -1041,7 +1053,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                         )}
                         {h.reservations && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><ReservationBadges reservations={h.reservations} color={day.color} icon={h.icon} text={h.text} url={h.url} /></div>}
                         {h.quickService && <QuickServiceDining color={day.color} />}
-                        {h.flight && FLIGHTS[activeDay] && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><FlightStatus dayIndex={activeDay} color={day.color} /></div>}
+                        {h.flight && h.location && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><FlightStatus h={h} color={day.color} /></div>}
                       </>
                     )}
                   </div>
