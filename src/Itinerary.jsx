@@ -456,34 +456,81 @@ function isLLExpired(endTime, isoDate) {
   return nowMins > endMins + 60;
 }
 
-async function fetchBookedLLs() {
+async function fetchActivities() {
   try {
     const res = await fetch(`${WORKER_URL}/activities`);
     if (!res.ok) return [];
     const data = await res.json();
     if (!data.results) return [];
     return data.results
-      .filter(page => (page.properties["Visibility"]?.select?.name ?? "Show") !== "Delete")
+      .filter(page => {
+        const vis = page.properties["Visibility"]?.select?.name ?? "Show";
+        return vis === "Show";
+      })
       .map((page) => {
         const props = page.properties;
+        const name      = props["Name"]?.title?.[0]?.text?.content ?? "";
+        const type      = props["Type"]?.select?.name ?? "LL";
+        const icon      = props["Icon"]?.rich_text?.[0]?.text?.content ?? "";
+        const subtext   = props["Subtext"]?.rich_text?.[0]?.text?.content ?? "";
+        const url       = props["URL"]?.url ?? "";
+        const date      = props["Date"]?.date?.start ?? "";
+        const startTime = props["Start Time"]?.rich_text?.[0]?.text?.content ?? "";
+        const endTime   = props["End Time"]?.rich_text?.[0]?.text?.content ?? "";
+        const party     = props["Party"]?.rich_text?.[0]?.text?.content ?? "All";
+        const location  = props["Location"]?.rich_text?.[0]?.text?.content ?? "";
+        const reservations = props["Reservations"]?.rich_text?.[0]?.text?.content ?? "";
+        const optional  = props["Optional"]?.checkbox ?? false;
+        const sortTime  = props["Sort Time"]?.number ?? parseTimeToInt(startTime);
+        const pageId    = page.id;
+
+        // LL and Character Meet types map to the existing booked LL flow
+        if (type === "LL" || type === "Character Meet") {
+          return {
+            _source: "notion",
+            _type: "ll",
+            date,
+            sortTime,
+            icon: icon || (type === "Character Meet" ? "🧸" : "⚡"),
+            rideName: name,
+            startTime,
+            endTime,
+            party,
+            rideId: location, // location field holds ride ID for LLs
+            entryType: type,
+            optional,
+            pageId,
+          };
+        }
+
+        // All other types map to standard highlight rows
         return {
-          rideName:   props["Name"]?.title?.[0]?.text?.content ?? "",
-          rideId:     props["Ride ID"]?.rich_text?.[0]?.text?.content ?? "",
-          park:       props["Park"]?.select?.name ?? "",
-          date:       props["Date"]?.date?.start ?? "",
-          startTime:  props["Start Time"]?.rich_text?.[0]?.text?.content ?? "",
-          endTime:    props["End Time"]?.rich_text?.[0]?.text?.content ?? "",
-          party:      props["Party"]?.rich_text?.[0]?.text?.content ?? "All",
-          type:       props["Type"]?.select?.name ?? "LL",
-          location:   props["Location"]?.rich_text?.[0]?.text?.content ?? "",
-          resort:     props["Resort"]?.select?.name ?? "",
-          optional:   props["Optional"]?.checkbox ?? false,
-          visibility: props["Visibility"]?.select?.name ?? "Show",
-          pageId:     page.id,
+          _source: "notion",
+          _type: type === "Flight" ? "flight-notion" : "highlight",
+          date,
+          sortTime,
+          icon: icon || "📅",
+          text: name,
+          subtext: subtext || undefined,
+          url: url || undefined,
+          location: location || undefined,
+          reservations: reservations || undefined,
+          startTime,
+          endTime,
+          party,
+          type,
+          optional,
+          pageId,
+          // Special flags for existing renderers
+          flight:       type === "Flight",
+          quickService: type === "Quick Service",
         };
       });
   } catch (_) { return []; }
 }
+
+// Keep fetchBookedLLs as alias for backward compat
+const fetchBookedLLs = fetchActivities;
 
 function Countdown() {
   const now = new Date();
@@ -757,31 +804,40 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   };
 
   // Merge highlights with booked LLs for the current day, sorted by time
+  // Separate Notion activities for this day by category
+  const notionForDay = bookedLLs.filter(a => a.date === day.isoDate);
+  const notionLLs = notionForDay.filter(a => (a._type === "ll") && !isLLExpired(a.endTime, a.date));
+  const notionHighlights = notionForDay.filter(a => a._type === "highlight" || a._type === "flight-notion");
+
+  // Determine if Notion has highlights for this day — if so, replace hardcoded ones
+  const hasNotionHighlights = notionHighlights.length > 0;
+
+  // Base: use Notion highlights if available, otherwise fall back to hardcoded
+  // Always keep hardcoded items that have no Notion equivalent (flight widget, quick service)
+  const hardcodedBase = day.highlights
+    .map(h => ({ ...h, _type: h._type ?? "highlight" }))
+    .filter(h => {
+      if (!hasNotionHighlights) return true; // no Notion data — keep all hardcoded
+      // Keep special hardcoded items that Notion can't fully replace yet
+      return h.flight || h.quickService;
+    });
+
+  const notionBase = notionHighlights.map(h => ({
+    ...h,
+    // Parse reservations string into array for ReservationBadges
+    reservations: h.reservations ? h.reservations.split("|").map(r => {
+      const m = r.trim().match(/^(.+?):\s*(\d+)\s*@\s*(.+?)\s*#(\S+)$/);
+      return m ? { party: m[1].trim(), size: `${m[2]} guests`, time: m[3].trim(), conf: m[4].trim() } : null;
+    }).filter(Boolean) : undefined,
+  }));
+
   const mergedHighlights = (() => {
-    const base = day.highlights.map(h => ({ ...h, _type: "highlight" }));
-    const llsForDay = bookedLLs
-      .filter(ll => ll.date === day.isoDate && (ll.visibility === "Show" || !ll.visibility) && !isLLExpired(ll.endTime, ll.date))
-      .map(ll => ({
-        _type: "ll",
-        sortTime: parseTimeToInt(ll.startTime),
-        icon: ll.type === "Character Meet" ? "🧸" : ll.type === "Resort Activity" ? "🏨" : "⚡",
-        rideName: ll.rideName,
-        startTime: ll.startTime,
-        endTime: ll.endTime,
-        party: ll.party,
-        rideId: ll.rideId,
-        type: ll.type,
-        location: ll.location,
-        resort: ll.resort,
-        optional: ll.optional,
-        visibility: ll.visibility,
-        pageId: ll.pageId,
-      }));
-    return [...base, ...llsForDay].sort((a, b) => (a.sortTime ?? 9999) - (b.sortTime ?? 9999));
+    const base = [...hardcodedBase, ...notionBase];
+    return [...base, ...notionLLs].sort((a, b) => (a.sortTime ?? 9999) - (b.sortTime ?? 9999));
   })();
 
-  const archivedLLs = bookedLLs.filter(ll =>
-    ll.date === day.isoDate && (ll.visibility === "Archive" || isLLExpired(ll.endTime, ll.date))
+  const archivedLLs = bookedLLs.filter(a =>
+    a.date === day.isoDate && a._type === "ll" && isLLExpired(a.endTime, a.date)
   );
 
   const swipeStart = useRef(null);
