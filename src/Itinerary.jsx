@@ -444,16 +444,28 @@ function parseTimeToInt(str) {
 
 // Returns true if the LL window closed more than 60 mins ago
 function isLLExpired(endTime, isoDate) {
-  if (!endTime || !isoDate) return false;
+  return isPast(null, endTime, isoDate);
+}
+
+function isPast(startTime, endTime, isoDate) {
+  if (!isoDate) return false;
   const today = new Date().toISOString().split("T")[0];
-  if (isoDate !== today) return false; // only expire on the actual day
+  if (isoDate > today) return false; // future day — nothing is past
+  if (isoDate < today) return true;  // past day — everything is past
+  // Current day — check time
   const now = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
-  const t = parseTimeToInt(endTime);
-  const endH = Math.floor(t / 100);
-  const endM = t % 100;
-  const endMins = endH * 60 + endM;
-  return nowMins > endMins + 60;
+  if (endTime) {
+    const t = parseTimeToInt(endTime);
+    const endMins = Math.floor(t / 100) * 60 + (t % 100);
+    return nowMins > endMins;
+  }
+  if (startTime) {
+    const t = parseTimeToInt(startTime);
+    const startMins = Math.floor(t / 100) * 60 + (t % 100);
+    return nowMins > startMins + 60;
+  }
+  return false;
 }
 
 async function fetchActivities() {
@@ -701,28 +713,29 @@ function LLRow({ h, color, borderBottom, onSkip }) {
 }
 
 // ── ViewToggle ─────────────────────────────────────────────────────────────────
-function ArchivedSection({ archivedLLs, onRestore }) {
+function ArchivedSection({ items, onRestore }) {
   const [open, setOpen] = useState(false);
-  if (!archivedLLs || archivedLLs.length === 0) return null;
+  if (!items || items.length === 0) return null;
   return (
-    <div style={{ borderTop:"1px solid #EDE8E1" }}>
+    <div style={{ borderBottom:"1px solid #EDE8E1" }}>
       <div onClick={() => setOpen(o => !o)} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 22px", cursor:"pointer", background:"#FAFAF8" }}>
-        <span style={{ fontSize:12, color:"#AAA", fontFamily:"'DM Sans',sans-serif" }}>Past & Declined ({archivedLLs.length})</span>
+        <span style={{ fontSize:12, color:"#AAA", fontFamily:"'DM Sans',sans-serif" }}>Past & Hidden ({items.length})</span>
         <span style={{ fontSize:10, color:"#CCC", transform:open?"rotate(180deg)":"none", transition:"transform 0.2s" }}>▾</span>
       </div>
       {open && (
         <div style={{ padding:"4px 0 8px" }}>
-          {archivedLLs.map((ll, i) => {
-            const timeStr = ll.startTime + (ll.endTime ? ` – ${ll.endTime}` : "");
-            const locationStr = ll.resort ? (ll.location ? `${ll.resort} · ${ll.location}` : ll.resort) : ll.location;
+          {items.map((h, i) => {
+            const name = h.text || h.rideName || "";
             return (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 22px", borderBottom:i<archivedLLs.length-1?"1px solid #F5F0EA":"none", opacity:0.5 }}>
-                <span style={{ fontSize:13 }}>{ll.type === "Character Meet" ? "🧸" : ll.type === "Resort Activity" ? "🏨" : "⚡"}</span>
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 22px", borderBottom:i<items.length-1?"1px solid #F5F0EA":"none", opacity:0.5 }}>
+                <span style={{ fontSize:13 }}>{h.icon || "📅"}</span>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:12, color:"#555", fontFamily:"'DM Sans',sans-serif" }}>{timeStr} · {ll.rideName}</div>
-                  {locationStr && <div style={{ fontSize:10, color:"#AAA", fontFamily:"'DM Sans',sans-serif" }}>{locationStr}</div>}
+                  <div style={{ fontSize:12, color:"#555", fontFamily:"'DM Sans',sans-serif" }}>{name}</div>
+                  {h.subtext && <div style={{ fontSize:10, color:"#AAA", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
                 </div>
-                <button onClick={() => onRestore(ll.pageId)} style={{ fontSize:10, color:"#4A7C59", background:"none", border:"1px solid #B7DFC8", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Restore</button>
+                {h.pageId && (
+                  <button onClick={() => onRestore(h.pageId)} style={{ fontSize:10, color:"#4A7C59", background:"none", border:"1px solid #B7DFC8", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Show</button>
+                )}
               </div>
             );
           })}
@@ -825,40 +838,49 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   // Merge highlights with booked LLs for the current day, sorted by time
   // Separate Notion activities for this day by category
   const notionForDay = bookedLLs.filter(a => a.date === day.isoDate);
-  const notionLLs = notionForDay.filter(a => (a._type === "ll") && !isLLExpired(a.endTime, a.date));
+  const notionLLs = notionForDay.filter(a => (a._type === "ll") && !isPast(a.startTime, a.endTime, a.date));
   const notionHighlights = notionForDay.filter(a => (a._type === "highlight" || a._type === "flight-notion") && a.type !== "Flight" && a.type !== "Quick Service");
 
   // Determine if Notion has highlights for this day — if so, replace hardcoded ones
   const hasNotionHighlights = notionHighlights.length > 0;
 
   // Base: use Notion highlights if available, otherwise fall back to hardcoded
-  // Always keep hardcoded items that have no Notion equivalent (flight widget, quick service)
   const hardcodedBase = day.highlights
     .map(h => ({ ...h, _type: h._type ?? "highlight" }))
     .filter(h => {
-      if (!hasNotionHighlights && activitiesLoaded) return true; // no Notion data after load — keep all hardcoded
-      if (!activitiesLoaded) return h.flight || h.quickService; // loading — only show stable items
-      // Notion data present — keep only special hardcoded items
+      if (!hasNotionHighlights && activitiesLoaded) return true;
+      if (!activitiesLoaded) return h.flight || h.quickService;
       return h.flight || h.quickService;
     });
 
+  const parseReservations = (str) => str ? str.split("|").map(r => {
+    const m = r.trim().match(/^(.+?):\s*(\d+)\s*@\s*(.+?)\s*#(\S+)$/);
+    return m ? { party: m[1].trim(), size: `${m[2]} guests`, time: m[3].trim(), conf: m[4].trim() } : null;
+  }).filter(Boolean) : undefined;
+
   const notionBase = notionHighlights.map(h => ({
     ...h,
-    // Parse reservations string into array for ReservationBadges
-    reservations: h.reservations ? h.reservations.split("|").map(r => {
-      const m = r.trim().match(/^(.+?):\s*(\d+)\s*@\s*(.+?)\s*#(\S+)$/);
-      return m ? { party: m[1].trim(), size: `${m[2]} guests`, time: m[3].trim(), conf: m[4].trim() } : null;
-    }).filter(Boolean) : undefined,
+    reservations: parseReservations(h.reservations),
   }));
 
-  const mergedHighlights = (() => {
-    const base = [...hardcodedBase, ...notionBase];
-    return [...base, ...notionLLs].sort((a, b) => (a.sortTime ?? 9999) - (b.sortTime ?? 9999));
-  })();
+  // Split all items into visible and past/hidden
+  const allItems = [...hardcodedBase, ...notionBase, ...notionLLs]
+    .sort((a, b) => (a.sortTime ?? 9999) - (b.sortTime ?? 9999));
 
-  const archivedLLs = bookedLLs.filter(a =>
-    a.date === day.isoDate && a._type === "ll" && isLLExpired(a.endTime, a.date)
+  const pastItems = allItems.filter(h =>
+    isPast(h.startTime, h.endTime, day.isoDate)
   );
+
+  const mergedHighlights = allItems.filter(h =>
+    !isPast(h.startTime, h.endTime, day.isoDate)
+  );
+
+  // Also include Notion-archived (hidden) items for this day
+  const hiddenNotionItems = bookedLLs.filter(a =>
+    a.date === day.isoDate && a.pageId && a._type !== "ll"
+  ); // These are already filtered to Visibility=Show by fetchActivities; hidden ones won't appear here
+  // Instead, past items is the combined section
+  const collapsedItems = pastItems;
 
   const swipeStart = useRef(null);
   const scrollStripRef = useRef(null);
@@ -993,6 +1015,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
 
               {/* Highlights */}
               <div style={{ padding:"8px 0" }}>
+                <ArchivedSection items={collapsedItems} onRestore={(pageId) => updateVisibility(pageId, "Show")} />
                 {mergedHighlights.map((h, hi) => (
                   <div key={hi}>
                     {h._type === "ll" ? (
@@ -1014,12 +1037,15 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                     ) : (
                       <>
                         {!h.reservations && (
-                          <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding: h.optional ? (h.subtext ? "6px 22px 5px 34px" : "6px 22px 6px 34px") : (h.subtext ? "7px 22px 5px" : "8px 22px"), borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none", opacity: h.optional ? 0.75 : 1 }}>
+                          <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding: h.optional ? (h.subtext ? "6px 22px 5px 34px" : "6px 22px 6px 34px") : (h.subtext ? "7px 22px 5px" : "8px 22px"), borderBottom:!h.flight&&!h.quickService&&!h.reservations&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none", opacity: h.optional ? 0.75 : 1 }}>
                             <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
                             <div style={{ flex:1, textAlign:"left" }}>
                               {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.4, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.4, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
                               {h.subtext && <div style={{ fontSize:10, color:"#BBB", marginTop:0, lineHeight:1.3, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
                             </div>
+                            {h.optional && h.pageId && (
+                              <button onClick={() => updateVisibility(h.pageId, "Archive")} style={{ fontSize:10, color:"#AAA", background:"none", border:"1px solid #DDD", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif", marginTop:2 }}>Hide</button>
+                            )}
                           </div>
                         )}
                         {h.reservations && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><ReservationBadges reservations={h.reservations} color={day.color} icon={h.icon} text={h.text} url={h.url} /></div>}
@@ -1032,8 +1058,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
               </div>
             </div>
 
-            {/* Past & Declined */}
-            <ArchivedSection archivedLLs={archivedLLs} onRestore={(pageId) => updateVisibility(pageId, "Show")} />
+
 
             {/* LL sections below tile — park days only */}
             {day.parkId && (
