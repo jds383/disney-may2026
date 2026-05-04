@@ -843,7 +843,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   const notionForDayVisible = notionForDay.filter(a => (a.visibility ?? "Show") === "Show");
   const notionForDayArchived = notionForDay.filter(a => a.visibility === "Archive");
   const notionLLs = notionForDayVisible.filter(a => (a._type === "ll") && !isPast(a.startTime, a.endTime, a.date));
-  const notionHighlights = notionForDayVisible.filter(a => (a._type === "highlight" || a._type === "flight-notion") && a.type !== "Flight" && a.type !== "Quick Service");
+  const notionHighlights = notionForDayVisible.filter(a => (a._type === "highlight" || a._type === "flight-notion") && a.type !== "Quick Service");
 
   // Determine if Notion has highlights for this day — if so, replace hardcoded ones
   const hasNotionHighlights = notionHighlights.length > 0;
@@ -854,7 +854,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
     .filter(h => {
       if (!hasNotionHighlights && activitiesLoaded) return true;
       if (!activitiesLoaded) return h.flight || h.quickService;
-      return h.flight || h.quickService;
+      return h.quickService;
     });
 
   const parseReservations = (str) => str ? str.split("|").map(r => {
