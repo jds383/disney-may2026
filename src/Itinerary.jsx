@@ -524,27 +524,6 @@ async function fetchActivities() {
           };
         }
 
-        // Character Meet renders as a standard highlight row
-        if (type === "Character Meet") {
-          return {
-            _source: "notion",
-            _type: "highlight",
-            date,
-            sortTime,
-            icon: icon || "🧸",
-            text: displayName,
-            subtext: subtext || location || undefined,
-            url: url || undefined,
-            startTime,
-            endTime,
-            party,
-            type,
-            optional,
-            visibility,
-            pageId,
-          };
-        }
-
         // All other types map to standard highlight rows
         return {
           _source: "notion",
@@ -552,8 +531,8 @@ async function fetchActivities() {
           date,
           sortTime,
           icon: icon || "📅",
-          text: name,
-          subtext: subtext || undefined,
+          text: displayName,
+          subtext: subtext || location || undefined,
           url: url || undefined,
           location: location || undefined,
           reservations: reservations || undefined,
