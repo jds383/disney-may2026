@@ -497,6 +497,12 @@ async function fetchActivities() {
         const sortTime  = props["Sort Time"]?.number ?? parseTimeToInt(startTime);
         const pageId    = page.id;
 
+        // Assemble display text from time fields + name
+        const timePrefix = startTime
+          ? (endTime ? `${startTime} – ${endTime} · ` : `${startTime} · `)
+          : "";
+        const displayName = timePrefix + name;
+
         // LL type maps to the booked LL flow
         if (type === "LL") {
           return {
@@ -526,7 +532,7 @@ async function fetchActivities() {
             date,
             sortTime,
             icon: icon || "🧸",
-            text: name,
+            text: displayName,
             subtext: subtext || location || undefined,
             url: url || undefined,
             startTime,
