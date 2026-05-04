@@ -997,11 +997,11 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                     ) : (
                       <>
                         {!h.reservations && (
-                          <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding: h.optional ? "7px 22px 7px 34px" : "8px 22px", borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none", opacity: h.optional ? 0.75 : 1 }}>
+                          <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding: h.optional ? (h.subtext ? "6px 22px 5px 34px" : "6px 22px 6px 34px") : (h.subtext ? "7px 22px 5px" : "8px 22px"), borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none", opacity: h.optional ? 0.75 : 1 }}>
                             <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
                             <div style={{ flex:1, textAlign:"left" }}>
-                              {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
-                              {h.subtext && <div style={{ fontSize:10, color:"#BBB", marginTop:1, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
+                              {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.4, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.4, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
+                              {h.subtext && <div style={{ fontSize:10, color:"#BBB", marginTop:0, lineHeight:1.3, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
                             </div>
                           </div>
                         )}
