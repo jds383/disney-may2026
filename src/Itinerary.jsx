@@ -715,7 +715,6 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
     setActiveDayRaw(i);
     try { localStorage.setItem("dw2026-activeDay", String(i)); } catch(_) {}
   };
-  const day = days[activeDay];
   const [rooms, setRooms] = useState({});
   const [bookedLLs, setBookedLLs] = useState([]);
   const [frameworkDays, setFrameworkDays] = useState(null); // null = loading, [] = failed
