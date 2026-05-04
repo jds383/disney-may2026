@@ -764,6 +764,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   };
   const [rooms, setRooms] = useState({});
   const [bookedLLs, setBookedLLs] = useState([]);
+  const [activitiesLoaded, setActivitiesLoaded] = useState(false);
   const [frameworkDays, setFrameworkDays] = useState(null); // null = loading, [] = failed
 
   // Merge framework days (from Notion) with hardcoded highlights
@@ -783,7 +784,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   }, []);
 
   useEffect(() => {
-    fetchBookedLLs().then(setBookedLLs).catch(() => {});
+    fetchBookedLLs().then(result => { setBookedLLs(result); setActivitiesLoaded(true); }).catch(() => { setActivitiesLoaded(true); });
   }, []);
 
   useEffect(() => {
@@ -801,13 +802,14 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
       });
       fetchBookedLLs().then(setBookedLLs).catch(() => {});
     } catch (_) {}
+
   };
 
   // Merge highlights with booked LLs for the current day, sorted by time
   // Separate Notion activities for this day by category
   const notionForDay = bookedLLs.filter(a => a.date === day.isoDate);
   const notionLLs = notionForDay.filter(a => (a._type === "ll") && !isLLExpired(a.endTime, a.date));
-  const notionHighlights = notionForDay.filter(a => a._type === "highlight" || a._type === "flight-notion");
+  const notionHighlights = notionForDay.filter(a => (a._type === "highlight" || a._type === "flight-notion") && a.type !== "Flight" && a.type !== "Quick Service");
 
   // Determine if Notion has highlights for this day — if so, replace hardcoded ones
   const hasNotionHighlights = notionHighlights.length > 0;
@@ -817,8 +819,9 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   const hardcodedBase = day.highlights
     .map(h => ({ ...h, _type: h._type ?? "highlight" }))
     .filter(h => {
-      if (!hasNotionHighlights) return true; // no Notion data — keep all hardcoded
-      // Keep special hardcoded items that Notion can't fully replace yet
+      if (!hasNotionHighlights && activitiesLoaded) return true; // no Notion data after load — keep all hardcoded
+      if (!activitiesLoaded) return h.flight || h.quickService; // loading — only show stable items
+      // Notion data present — keep only special hardcoded items
       return h.flight || h.quickService;
     });
 
