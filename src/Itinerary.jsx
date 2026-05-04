@@ -13,11 +13,12 @@ const fmtIso = (iso) => {
 
 // h = the flight activity object from Notion (has text, startTime, endTime, location, date)
 function FlightStatus({ h, color }) {
-  const flightNum = h?.location?.trim(); // e.g. "AA2531"
-  const schedDep  = h?.startTime || "";
-  const schedArr  = h?.endTime   || "";
-  const flightDate = h?.date     || "";
-  const label     = h?.text?.replace(/^[\d:APM\s–·]+/, "").trim() || h?.text || "";
+  const flightNum  = h?.location?.trim();
+  const schedDep   = h?.startTime || "";
+  const schedArr   = h?.endTime   || "";
+  const flightDate = h?.date      || "";
+  // Name from Notion (without time prefix — strip it if displayName was used)
+  const label = (h?.text || "").replace(/^\d+:\d+\s*(?:AM|PM)\s*(?:–\s*\d+:\d+\s*(?:AM|PM)\s*)?·\s*/, "").trim();
 
   const [live, setLive] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -82,12 +83,16 @@ function FlightStatus({ h, color }) {
 
   return (
     <div style={{ padding: "9px 22px 10px", borderTop: "1px solid #F5F0EA", background: "#FAFAF8" }}>
-      {/* Row 1: label, flight, route, status, refresh */}
+      {/* Row 1: start time · flight number · name (as link) · end time · status · refresh */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-        <span style={{ fontSize: 13, color: "#2A2A2A", fontFamily: "'DM Sans',sans-serif", flex: 1 }}>
-          {label && <span style={{ fontWeight: 500 }}>{label} · </span>}
-          <span style={{ color: "#888" }}>{flightNum}</span>
-          {live && <span style={{ color: "#AAA", fontSize: 12 }}> · {d.from} → {d.to}</span>}
+        <span style={{ fontSize: 13, fontFamily: "'DM Sans',sans-serif", color: "#2A2A2A", flex: 1 }}>
+          {schedDep && <span style={{ color: "#2A2A2A" }}>{schedDep} · </span>}
+          <span style={{ color: "#AAA" }}>{flightNum} · </span>
+          {h?.url
+            ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ color, textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 3 }}>{label} ↗</a>
+            : <span style={{ color }}>{label}</span>
+          }
+          {schedArr && <span style={{ color: "#2A2A2A" }}> · {schedArr}</span>}
         </span>
         <span style={{ fontSize: 10, background: statusColor + "22", color: statusColor, border: `1px solid ${statusColor}44`, borderRadius: 20, padding: "1px 8px", fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>{d.status}</span>
         <button onClick={e => { e.stopPropagation(); fetchData(); }} style={{ fontSize: 13, background: "none", border: "none", cursor: "pointer", color: "#BBB", padding: "0 2px", lineHeight: 1, flexShrink: 0, transform: spinning ? "rotate(180deg)" : "none", transition: "transform 0.4s ease" }}>↻</button>
