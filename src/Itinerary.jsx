@@ -477,7 +477,7 @@ async function fetchActivities() {
     return data.results
       .filter(page => {
         const vis = page.properties["Visibility"]?.select?.name ?? "Show";
-        return vis === "Show";
+        return vis === "Show" || vis === "Archive"; // fetch both; filter client-side
       })
       .map((page) => {
         const props = page.properties;
@@ -493,6 +493,7 @@ async function fetchActivities() {
         const location  = props["Location"]?.rich_text?.[0]?.text?.content ?? "";
         const reservations = props["Reservations"]?.rich_text?.[0]?.text?.content ?? "";
         const optional  = props["Optional"]?.checkbox ?? false;
+        const visibility = props["Visibility"]?.select?.name ?? "Show";
         const sortTime  = props["Sort Time"]?.number ?? parseTimeToInt(startTime);
         const pageId    = page.id;
 
@@ -512,27 +513,28 @@ async function fetchActivities() {
             entryType: type,
             url,
             optional,
+            visibility,
             pageId,
           };
         }
 
-        // Character Meet maps to highlight flow with meet styling
+        // Character Meet renders as a standard highlight row
         if (type === "Character Meet") {
           return {
             _source: "notion",
-            _type: "ll", // still uses LLRow for time+name inline display
+            _type: "highlight",
             date,
             sortTime,
             icon: icon || "🧸",
-            rideName: name,
+            text: name,
+            subtext: subtext || location || undefined,
+            url: url || undefined,
             startTime,
             endTime,
             party,
-            rideId: location,
-            entryType: type,
-            url,
-            subtext: subtext || location || undefined,
+            type,
             optional,
+            visibility,
             pageId,
           };
         }
@@ -554,6 +556,7 @@ async function fetchActivities() {
           party,
           type,
           optional,
+          visibility,
           pageId,
           // Special flags for existing renderers
           flight:       type === "Flight",
@@ -707,7 +710,9 @@ function LLRow({ h, color, borderBottom, onSkip }) {
           <span style={{ fontSize:11, color:"#AAA", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:2, textAlign:"left" }}>{location}</span>
         )}
       </div>
-
+      {h.optional && h.pageId && onSkip && (
+        <button onClick={() => onSkip(h.pageId)} style={{ fontSize:10, color:"#AAA", background:"none", border:"1px solid #DDD", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif", marginTop:2 }}>Hide</button>
+      )}
     </div>
   );
 }
@@ -838,8 +843,10 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   // Merge highlights with booked LLs for the current day, sorted by time
   // Separate Notion activities for this day by category
   const notionForDay = bookedLLs.filter(a => a.date === day.isoDate);
-  const notionLLs = notionForDay.filter(a => (a._type === "ll") && !isPast(a.startTime, a.endTime, a.date));
-  const notionHighlights = notionForDay.filter(a => (a._type === "highlight" || a._type === "flight-notion") && a.type !== "Flight" && a.type !== "Quick Service");
+  const notionForDayVisible = notionForDay.filter(a => (a.visibility ?? "Show") === "Show");
+  const notionForDayArchived = notionForDay.filter(a => a.visibility === "Archive");
+  const notionLLs = notionForDayVisible.filter(a => (a._type === "ll") && !isPast(a.startTime, a.endTime, a.date));
+  const notionHighlights = notionForDayVisible.filter(a => (a._type === "highlight" || a._type === "flight-notion") && a.type !== "Flight" && a.type !== "Quick Service");
 
   // Determine if Notion has highlights for this day — if so, replace hardcoded ones
   const hasNotionHighlights = notionHighlights.length > 0;
@@ -876,11 +883,10 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   );
 
   // Also include Notion-archived (hidden) items for this day
-  const hiddenNotionItems = bookedLLs.filter(a =>
-    a.date === day.isoDate && a.pageId && a._type !== "ll"
-  ); // These are already filtered to Visibility=Show by fetchActivities; hidden ones won't appear here
-  // Instead, past items is the combined section
-  const collapsedItems = pastItems;
+  const collapsedItems = [...pastItems, ...notionForDayArchived]
+    .sort((a, b) => (a.sortTime ?? 9999) - (b.sortTime ?? 9999))
+    // deduplicate by pageId
+    .filter((item, idx, arr) => !item.pageId || arr.findIndex(x => x.pageId === item.pageId) === idx);
 
   const swipeStart = useRef(null);
   const scrollStripRef = useRef(null);
