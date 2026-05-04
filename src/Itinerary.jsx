@@ -430,6 +430,14 @@ async function fetchFramework() {
 
 
 // Parse "9:15 AM" → sortable integer 915, "10:30 PM" → 2230
+// Assemble display text from Start Time, End Time, and Name
+function displayText(h) {
+  const name = displayText(h);
+  if (!h.startTime) return name;
+  const time = h.endTime ? `${h.startTime} – ${h.endTime}` : h.startTime;
+  return `${time} · ${name}`;
+}
+
 function parseTimeToInt(str) {
   if (!str) return 9999;
   const m = str.match(/(\d+):(\d+)\s*(AM|PM)/i);
@@ -730,7 +738,7 @@ function ArchivedSection({ items, onRestore }) {
       {open && (
         <div style={{ padding:"4px 0 8px" }}>
           {items.map((h, i) => {
-            const name = h.text || h.rideName || "";
+            const name = displayText(h);
             return (
               <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding: h.subtext ? "7px 22px 5px" : "8px 22px", borderBottom:i<items.length-1?"1px solid #F5F0EA":"none", opacity:0.5 }}>
                 <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon || "📅"}</span>
@@ -1046,7 +1054,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                           <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding: h.optional ? (h.subtext ? "6px 22px 5px 34px" : "6px 22px 6px 34px") : (h.subtext ? "7px 22px 5px" : "8px 22px"), borderBottom:!h.flight&&!h.quickService&&!h.reservations&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none", opacity: h.optional ? 0.75 : 1 }}>
                             <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
                             <div style={{ flex:1, textAlign:"left" }}>
-                              {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.4, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.4, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
+                              {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.4, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{displayText(h)} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.4, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{displayText(h)}</span>}
                               {h.subtext && <div style={{ fontSize:10, color:"#BBB", marginTop:0, lineHeight:1.3, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
                             </div>
                             {h.optional && h.pageId && (
@@ -1054,7 +1062,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                             )}
                           </div>
                         )}
-                        {h.reservations && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><ReservationBadges reservations={h.reservations} color={day.color} icon={h.icon} text={h.text} url={h.url} /></div>}
+                        {h.reservations && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><ReservationBadges reservations={h.reservations} color={day.color} icon={h.icon} text={displayText(h)} url={h.url} /></div>}
                         {h.quickService && <QuickServiceDining color={day.color} />}
                         {h.flight && FLIGHTS[activeDay] && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><FlightStatus dayIndex={activeDay} color={day.color} /></div>}
                       </>
