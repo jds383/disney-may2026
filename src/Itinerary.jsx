@@ -732,14 +732,14 @@ function ArchivedSection({ items, onRestore }) {
           {items.map((h, i) => {
             const name = h.text || h.rideName || "";
             return (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 22px", borderBottom:i<items.length-1?"1px solid #F5F0EA":"none", opacity:0.5 }}>
-                <span style={{ fontSize:13 }}>{h.icon || "📅"}</span>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:12, color:"#555", fontFamily:"'DM Sans',sans-serif" }}>{name}</div>
-                  {h.subtext && <div style={{ fontSize:10, color:"#AAA", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
+              <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding: h.subtext ? "7px 22px 5px" : "8px 22px", borderBottom:i<items.length-1?"1px solid #F5F0EA":"none", opacity:0.5 }}>
+                <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon || "📅"}</span>
+                <div style={{ flex:1, textAlign:"left" }}>
+                  <div style={{ fontSize:13, color:"#2A2A2A", fontFamily:"'DM Sans',sans-serif", lineHeight:1.4 }}>{name}</div>
+                  {h.subtext && <div style={{ fontSize:10, color:"#BBB", marginTop:0, lineHeight:1.3, fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
                 </div>
                 {h.pageId && (
-                  <button onClick={() => onRestore(h.pageId)} style={{ fontSize:10, color:"#4A7C59", background:"none", border:"1px solid #B7DFC8", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Show</button>
+                  <button onClick={() => onRestore(h.pageId)} style={{ fontSize:10, color:"#4A7C59", background:"none", border:"1px solid #B7DFC8", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif", marginTop:2 }}>Show</button>
                 )}
               </div>
             );
