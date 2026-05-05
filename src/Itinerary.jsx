@@ -685,7 +685,7 @@ function useWeather(date, lat, lon) {
         setCachedWeather(date,w); setWeather(w);
       } catch(e){setError("failed: "+e.message);}
     })();
-  }, [date]);
+  }, [date, lat, lon]);
   return { weather, error };
 }
 
