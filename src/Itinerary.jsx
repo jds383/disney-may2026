@@ -817,9 +817,10 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
       highlights: hardcoded?.highlights ?? fd.highlights,
     };
   });
-  const day = activeDays[activeDay] ?? days[activeDay];
+  const safeActiveDay = Math.min(activeDay, activeDays.length - 1);
+  const day = activeDays[safeActiveDay] ?? days[safeActiveDay] ?? days[0];
 
-  const { weather, error: weatherError } = useWeather(day.weatherDate, day.weatherLat, day.weatherLon);
+  const { weather, error: weatherError } = useWeather(day?.weatherDate, day?.weatherLat, day?.weatherLon);
 
   useEffect(() => {
     try { const r = localStorage.getItem("dw2026-rooms"); if (r) setRooms(JSON.parse(r)); } catch(_) {}
