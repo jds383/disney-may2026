@@ -400,15 +400,23 @@ function parseFrameworkDay(page, index) {
   // Derive hotel display string
   const hotel = locStart === locEnd ? locEnd : `${locStart} → ${locEnd}`;
 
-  // Derive weather coords — prefer park location on park days, else use end location
-  let weatherLat, weatherLon;
-  if (parkId && PARK_WEATHER[parkId]) {
-    weatherLat = PARK_WEATHER[parkId].lat;
-    weatherLon = PARK_WEATHER[parkId].lon;
-  } else {
-    const loc = LOCATION_WEATHER[locEnd] ?? LOCATION_WEATHER[locStart];
-    weatherLat = loc?.lat ?? 28.3613;
-    weatherLon = loc?.lon ?? -81.5588;
+  // Read weather coords from Notion fields
+  const weatherLatStart = parseFloat(props["Lat Start"]?.number ?? props["Lat Start"]?.rich_text?.[0]?.plain_text ?? 0) || null;
+  const weatherLonStart = parseFloat(props["Lon Start"]?.number ?? props["Lon Start"]?.rich_text?.[0]?.plain_text ?? 0) || null;
+  const weatherLatEnd   = parseFloat(props["Lat End"]?.number   ?? props["Lat End"]?.rich_text?.[0]?.plain_text   ?? 0) || null;
+  const weatherLonEnd   = parseFloat(props["Lon End"]?.number   ?? props["Lon End"]?.rich_text?.[0]?.plain_text   ?? 0) || null;
+
+  // Fall back to hardcoded lookup if Notion coords missing
+  let weatherLat = weatherLatStart, weatherLon = weatherLonStart;
+  if (!weatherLat || !weatherLon) {
+    if (parkId && PARK_WEATHER[parkId]) {
+      weatherLat = PARK_WEATHER[parkId].lat;
+      weatherLon = PARK_WEATHER[parkId].lon;
+    } else {
+      const loc = LOCATION_WEATHER[locEnd] ?? LOCATION_WEATHER[locStart];
+      weatherLat = loc?.lat ?? 28.3613;
+      weatherLon = loc?.lon ?? -81.5588;
+    }
   }
 
   // Derive date display string (e.g. "Thu May 21")
@@ -424,6 +432,12 @@ function parseFrameworkDay(page, index) {
     weatherDate: isoDate,
     weatherLat,
     weatherLon,
+    weatherLatStart: weatherLatStart || weatherLat,
+    weatherLonStart: weatherLonStart || weatherLon,
+    weatherLatEnd:   weatherLatEnd   || weatherLat,
+    weatherLonEnd:   weatherLonEnd   || weatherLon,
+    locStart,
+    locEnd,
     isoDate,
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }],
     color,
@@ -672,20 +686,60 @@ function useWeather(date, lat, lon) {
   return { weather, error };
 }
 
-function WeatherStack({ weather, error }) {
-  if (error==="not yet available") return <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:20,lineHeight:1,marginBottom:4}}>📅</div><div style={{fontSize:9,color:"rgba(255,255,255,0.35)",fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>not yet available</div></div>;
-  if (error) return <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,lineHeight:1,marginBottom:4}}>⚠️</div><div style={{fontSize:9,color:"rgba(255,255,255,0.5)",fontFamily:"'DM Sans',sans-serif",maxWidth:100,wordBreak:"break-all"}}>{error}</div></div>;
-  if (!weather) return <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:16,lineHeight:1,marginBottom:4}}>🌡️</div><div style={{fontSize:9,color:"rgba(255,255,255,0.35)",fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>fetching...</div></div>;
+function WeatherPane({ weather, error, label }) {
+  if (error === "not yet available") return <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:20,lineHeight:1,marginBottom:2}}>📅</div><div style={{fontSize:9,color:"rgba(255,255,255,0.35)",fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>not yet available</div></div>;
+  if (error) return <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,lineHeight:1,marginBottom:2}}>⚠️</div><div style={{fontSize:9,color:"rgba(255,255,255,0.5)",fontFamily:"'DM Sans',sans-serif"}}>{error}</div></div>;
+  if (!weather) return <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:16,lineHeight:1,marginBottom:2}}>🌡️</div><div style={{fontSize:9,color:"rgba(255,255,255,0.35)",fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>fetching...</div></div>;
   return (
     <div style={{textAlign:"right",flexShrink:0}}>
-      <div style={{fontSize:24,lineHeight:1,marginBottom:4}}>{weather.stormWindow?"⛈️":weather.icon}</div>
-      <div style={{fontSize:11,color:"rgba(255,255,255,0.9)",fontFamily:"'DM Sans',sans-serif",lineHeight:1.5,whiteSpace:"nowrap"}}><span style={{color:"#FFF",fontWeight:"bold"}}>{weather.high}°</span><span style={{color:"rgba(255,255,255,0.5)",fontSize:9}}> ↑{weather.highTime}</span></div>
-      <div style={{fontSize:11,color:"rgba(255,255,255,0.9)",fontFamily:"'DM Sans',sans-serif",lineHeight:1.5,whiteSpace:"nowrap"}}><span style={{color:"rgba(255,255,255,0.75)"}}>{weather.low}°</span><span style={{color:"rgba(255,255,255,0.5)",fontSize:9}}> ↓{weather.lowTime}</span></div>
+      {label && <div style={{fontSize:8,color:"rgba(255,255,255,0.5)",fontFamily:"'DM Sans',sans-serif",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:1}}>{label}</div>}
+      <div style={{fontSize:22,lineHeight:1,marginBottom:2}}>{weather.stormWindow?"⛈️":weather.icon}</div>
+      <div style={{fontSize:11,color:"rgba(255,255,255,0.9)",fontFamily:"'DM Sans',sans-serif",lineHeight:1.4,whiteSpace:"nowrap"}}><span style={{color:"#FFF",fontWeight:"bold"}}>{weather.high}°</span><span style={{color:"rgba(255,255,255,0.5)",fontSize:9}}> ↑{weather.highTime}</span></div>
+      <div style={{fontSize:11,color:"rgba(255,255,255,0.9)",fontFamily:"'DM Sans',sans-serif",lineHeight:1.4,whiteSpace:"nowrap"}}><span style={{color:"rgba(255,255,255,0.75)"}}>{weather.low}°</span><span style={{color:"rgba(255,255,255,0.5)",fontSize:9}}> ↓{weather.lowTime}</span></div>
     </div>
   );
 }
 
-function WeatherAlert({ weather }) {
+function WeatherStack({ day }) {
+  const isDual = day.weatherLatEnd && day.weatherLatEnd !== day.weatherLatStart;
+  const [showEnd, setShowEnd] = useState(false);
+
+  useEffect(() => {
+    if (!isDual) return;
+    const id = setInterval(() => setShowEnd(s => !s), 5000);
+    return () => clearInterval(id);
+  }, [isDual]);
+
+  const latA = day.weatherLatStart || day.weatherLat;
+  const lonA = day.weatherLonStart || day.weatherLon;
+  const latB = day.weatherLatEnd   || day.weatherLat;
+  const lonB = day.weatherLonEnd   || day.weatherLon;
+
+  const { weather: wA, error: eA } = useWeather(day.weatherDate, latA, lonA);
+  const { weather: wB, error: eB } = useWeather(isDual ? day.weatherDate : null, latB, lonB);
+
+  const labelA = day.locStart && isDual ? day.locStart.split(" ")[0] : null;
+  const labelB = day.locEnd   && isDual ? day.locEnd.split(" ")[0]   : null;
+
+  const handleTap = () => { if (isDual) setShowEnd(s => !s); };
+
+  return (
+    <div onClick={handleTap} style={{ cursor: isDual ? "pointer" : "default", flexShrink: 0 }}>
+      {isDual && (
+        <div style={{ display:"flex", justifyContent:"flex-end", gap:3, marginBottom:3 }}>
+          <div style={{ width:4, height:4, borderRadius:"50%", background: !showEnd ? "#FFF" : "rgba(255,255,255,0.3)" }} />
+          <div style={{ width:4, height:4, borderRadius:"50%", background:  showEnd ? "#FFF" : "rgba(255,255,255,0.3)" }} />
+        </div>
+      )}
+      <WeatherPane weather={showEnd ? wB : wA} error={showEnd ? eB : eA} label={showEnd ? labelB : labelA} />
+    </div>
+  );
+}
+
+function WeatherAlert({ day }) {
+  const latA = day?.weatherLatStart || day?.weatherLat;
+  const lonA = day?.weatherLonStart || day?.weatherLon;
+  const { weather } = useWeather(day?.weatherDate, latA, lonA);
   if (!weather?.stormWindow) return null;
   const { start, end, prob, label } = weather.stormWindow;
   return (
@@ -820,7 +874,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   const safeActiveDay = Math.min(activeDay, activeDays.length - 1);
   const day = activeDays[safeActiveDay] ?? days[safeActiveDay] ?? days[0];
 
-  const { weather, error: weatherError } = useWeather(day?.weatherDate, day?.weatherLat, day?.weatherLon);
+
 
   useEffect(() => {
     try { const r = localStorage.getItem("dw2026-rooms"); if (r) setRooms(JSON.parse(r)); } catch(_) {}
@@ -1022,9 +1076,9 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                       </div>
                     )}
                   </div>
-                  <WeatherStack weather={weather} error={weatherError} />
+                  <WeatherStack day={day} />
                 </div>
-                <WeatherAlert weather={weather} />
+                <WeatherAlert day={day} />
               </div>
 
               {/* Highlights */}
