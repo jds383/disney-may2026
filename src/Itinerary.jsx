@@ -644,9 +644,8 @@ function useWeather(date, lat, lon) {
   const [error, setError] = useState(null);
   useEffect(() => {
     if (!date||!lat||!lon) return;
-    const targetDate = new Date(date);
-    const daysAhead = (targetDate - new Date()) / 86400000;
-    if (daysAhead > 16) { setError("not yet available"); return; }
+    const today = new Date().toISOString().split("T")[0];
+    if (date < today) { setError("not yet available"); return; } // past date, skip
     (async () => {
       const cached = getCachedWeather(date);
       if (cached) { setWeather(cached); return; }
