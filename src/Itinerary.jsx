@@ -1079,7 +1079,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                       </div>
                     )}
                   </div>
-                  <WeatherStack day={day} />
+                  {frameworkDays && <WeatherStack day={day} />}
                 </div>
                 <WeatherAlert day={day} />
               </div>
