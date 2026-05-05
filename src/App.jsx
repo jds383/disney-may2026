@@ -342,5 +342,8 @@ export default function App() {
         onLLStatus={handleLLStatus}
       />
     </div>
+    </ErrorBoundary>
   );
 }
+
+export default App;
