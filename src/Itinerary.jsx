@@ -651,11 +651,11 @@ function useWeather(date, lat, lon) {
       const cached = getCachedWeather(date);
       if (cached) { setWeather(cached); return; }
       try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode,precipitation_probability&temperature_unit=fahrenheit&timezone=America%2FNew_York&start_date=${date}&end_date=${date}`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code,precipitation_probability&temperature_unit=fahrenheit&timezone=America%2FNew_York&start_date=${date}&end_date=${date}`;
         const res = await fetch(url); const data = await res.json();
         if (!data || !data.hourly || !data.hourly.temperature_2m) { setError("no data"); return; }
         const hours = data.hourly;
-        const temps=hours.temperature_2m; const codes=hours.weathercode; const precip=hours.precipitation_probability;
+        const temps=hours.temperature_2m; const codes=hours.weather_code; const precip=hours.precipitation_probability;
         const highTemp = temps.reduce((a,b) => a>b?a:b, -Infinity);
         const lowTemp  = temps.reduce((a,b) => a<b?a:b,  Infinity);
         const highIdx  = temps.indexOf(highTemp);
