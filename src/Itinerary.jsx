@@ -650,7 +650,7 @@ const WMO_ICON = { 0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"�
 const WMO_LABEL = { 0:"Clear",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",45:"Foggy",48:"Foggy",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",61:"Light rain",63:"Rain",65:"Heavy rain",80:"Rain showers",81:"Rain showers",82:"Heavy showers",95:"Thunderstorms",96:"Thunderstorms",99:"Thunderstorms" };
 const fmtHour = (t) => { try { return new Date(t).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); } catch(_){return "";} };
 const WEATHER_CACHE_KEY = "dw2026-weather-cache";
-const getCachedWeather = (dk) => { try { const raw=localStorage.getItem(WEATHER_CACHE_KEY); if(!raw)return null; const cache=JSON.parse(raw); const entry=cache[dk]; if(!entry)return null; const ttl=(dk===new Date().toISOString().split("T")[0]||dk===new Date(Date.now()+86400000).toISOString().split("T")[0])?3600000:86400000; if(Date.now()-entry.fetchedAt<ttl)return entry.weather; return null; } catch(_){return null;} };
+const getCachedWeather = (dk) => { try { const raw=localStorage.getItem(WEATHER_CACHE_KEY); if(!raw)return null; const cache=JSON.parse(raw); const entry=cache[dk]; if(!entry)return null; const today=new Date().toISOString().split("T")[0]; const ttl=(dk.startsWith(today)||dk.startsWith(new Date(Date.now()+86400000).toISOString().split("T")[0]))?3600000:86400000; if(Date.now()-entry.fetchedAt<ttl)return entry.weather; return null; } catch(_){return null;} };
 const setCachedWeather = (dk,w) => { try { let cache={}; try{const raw=localStorage.getItem(WEATHER_CACHE_KEY);if(raw)cache=JSON.parse(raw);}catch(_){} cache[dk]={weather:w,fetchedAt:Date.now()}; localStorage.setItem(WEATHER_CACHE_KEY,JSON.stringify(cache)); } catch(_){} };
 
 function useWeather(date, lat, lon) {
@@ -664,7 +664,8 @@ function useWeather(date, lat, lon) {
     const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     if (date < today) { setError("not yet available"); return; } // past date, skip
     (async () => {
-      const cached = getCachedWeather(date);
+      const cacheKey = `${date}_${lat}_${lon}`;
+      const cached = getCachedWeather(cacheKey);
       if (cached) { setWeather(cached); return; }
       try {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code,precipitation_probability&temperature_unit=fahrenheit&timezone=America%2FNew_York&start_date=${date}&end_date=${date}`;
@@ -682,7 +683,7 @@ function useWeather(date, lat, lon) {
         const dayCodes=codes.slice(9,18);
         const dominantCode=dayCodes.sort((a,b)=>dayCodes.filter(v=>v===b).length-dayCodes.filter(v=>v===a).length)[0];
         const w={high:Math.round(highTemp),low:Math.round(lowTemp),highTime:fmtHour(hours.time[highIdx]),lowTime:fmtHour(hours.time[lowIdx]),icon:WMO_ICON[dominantCode]||"🌡️",label:WMO_LABEL[dominantCode]||"Unknown",stormWindow};
-        setCachedWeather(date,w); setWeather(w);
+        setCachedWeather(`${date}_${lat}_${lon}`, w); setWeather(w);
       } catch(e){setError("failed: "+e.message);}
     })();
   }, [date, lat, lon]);
