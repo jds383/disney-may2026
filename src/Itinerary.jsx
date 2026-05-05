@@ -658,6 +658,8 @@ function useWeather(date, lat, lon) {
   const [error, setError] = useState(null);
   useEffect(() => {
     if (!date||!lat||!lon) return;
+    setWeather(null);
+    setError(null);
     const today = new Date().toISOString().split("T")[0];
     if (date < today) { setError("not yet available"); return; } // past date, skip
     (async () => {
