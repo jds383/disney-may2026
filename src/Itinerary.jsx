@@ -17,8 +17,7 @@ function FlightStatus({ h, color }) {
   const schedDep   = h?.startTime || "";
   const schedArr   = h?.endTime   || "";
   const flightDate = h?.date      || "";
-  // Name from Notion (without time prefix — strip it if displayName was used)
-  const label = (h?.text || "").replace(/^\d+:\d+\s*(?:AM|PM)\s*(?:–\s*\d+:\d+\s*(?:AM|PM)\s*)?·\s*/, "").trim();
+  const label      = h?.rawName   || h?.text || "";
 
   const [live, setLive] = useState(null);
   const [spinning, setSpinning] = useState(false);
@@ -519,6 +518,7 @@ async function fetchActivities() {
           ? (endTime ? `${startTime} – ${endTime} · ` : `${startTime} · `)
           : "";
         const displayName = timePrefix + name;
+        const rawName = name;
 
         // LL type maps to the booked LL flow
         if (type === "LL") {
@@ -549,6 +549,7 @@ async function fetchActivities() {
           sortTime,
           icon: icon || "📅",
           text: displayName,
+          rawName,
           subtext: subtext || location || undefined,
           url: url || undefined,
           location: location || undefined,
@@ -652,14 +653,19 @@ function useWeather(date, lat, lon) {
       try {
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode,precipitation_probability&temperature_unit=fahrenheit&timezone=America%2FNew_York&start_date=${date}&end_date=${date}`;
         const res = await fetch(url); const data = await res.json();
-        const hours = data.hourly; const temps=hours.temperature_2m; const codes=hours.weathercode; const precip=hours.precipitation_probability;
-        const highIdx=temps.indexOf(Math.max(...temps)); const lowIdx=temps.indexOf(Math.min(...temps));
+        if (!data || !data.hourly || !data.hourly.temperature_2m) { setError("no data"); return; }
+        const hours = data.hourly;
+        const temps=hours.temperature_2m; const codes=hours.weathercode; const precip=hours.precipitation_probability;
+        const highTemp = temps.reduce((a,b) => a>b?a:b, -Infinity);
+        const lowTemp  = temps.reduce((a,b) => a<b?a:b,  Infinity);
+        const highIdx  = temps.indexOf(highTemp);
+        const lowIdx   = temps.indexOf(lowTemp);
         let stormWindow=null;
         const stormHours=hours.time.map((t,i)=>({t,code:codes[i],prob:precip[i]})).filter(h=>h.code>=95&&h.prob>=50);
-        if(stormHours.length>0){const start=fmtHour(stormHours[0].t);const end=fmtHour(stormHours[stormHours.length-1].t);const maxProb=Math.max(...stormHours.map(h=>h.prob));stormWindow={start,end,prob:maxProb,label:"Storm possible"};}
+        if(stormHours.length>0){const start=fmtHour(stormHours[0].t);const end=fmtHour(stormHours[stormHours.length-1].t);const maxProb=stormHours.reduce((a,b)=>a>b.prob?a:b.prob,0);stormWindow={start,end,prob:maxProb,label:"Storm possible"};}
         const dayCodes=codes.slice(9,18);
         const dominantCode=dayCodes.sort((a,b)=>dayCodes.filter(v=>v===b).length-dayCodes.filter(v=>v===a).length)[0];
-        const w={high:Math.round(Math.max(...temps)),low:Math.round(Math.min(...temps)),highTime:fmtHour(hours.time[highIdx]),lowTime:fmtHour(hours.time[lowIdx]),icon:WMO_ICON[dominantCode]||"🌡️",label:WMO_LABEL[dominantCode]||"Unknown",stormWindow};
+        const w={high:Math.round(highTemp),low:Math.round(lowTemp),highTime:fmtHour(hours.time[highIdx]),lowTime:fmtHour(hours.time[lowIdx]),icon:WMO_ICON[dominantCode]||"🌡️",label:WMO_LABEL[dominantCode]||"Unknown",stormWindow};
         setCachedWeather(date,w); setWeather(w);
       } catch(e){setError("failed: "+e.message);}
     })();
