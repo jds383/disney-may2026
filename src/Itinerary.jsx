@@ -312,7 +312,7 @@ async function fetchBookedLLs() {
           visibility: props["Visibility"]?.select?.name ?? "Show",
           pageId:     page.id,
           icon:       props["Icon"]?.rich_text?.[0]?.text?.content ?? "",
-          url:        props["userDefined:URL"]?.url ?? "",
+          url:        props["userDefined:URL"]?.url ?? props["URL"]?.url ?? props["userDefined:URL"]?.rich_text?.[0]?.text?.content ?? "",
           subtext:    props["Subtext"]?.rich_text?.[0]?.text?.content ?? "",
           sortTime:   props["Sort Time"]?.number ?? 9999,
         };
@@ -680,6 +680,35 @@ function DiningCredits({ isoDate }) {
   );
 }
 
+function HighlightRow({ h, color, borderBottom }) {
+  const [open, setOpen] = useState(false);
+  const hasSubtext = !!h.subtext;
+  return (
+    <div style={{ borderBottom }}>
+      <div
+        onClick={() => hasSubtext && setOpen(o => !o)}
+        style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"6px 22px", cursor: hasSubtext ? "pointer" : "default" }}
+      >
+        <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
+        <div style={{ flex:1, textAlign:"left" }}>
+          {h.url
+            ? <a href={h.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize:13, color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a>
+            : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>
+          }
+        </div>
+        {hasSubtext && (
+          <span style={{ fontSize:11, color:"#CCC", flexShrink:0, marginTop:2, transition:"transform 0.2s", display:"inline-block", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+        )}
+      </div>
+      {open && hasSubtext && (
+        <div style={{ padding:"0 22px 8px 50px", fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", lineHeight:1.5 }}>
+          {h.subtext}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ViewToggle({ view, setView }) {
   return (
     <div style={{
@@ -944,13 +973,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                       </div>
                     ) : (
                       <>
-                        <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}>
-                          <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
-                          <div style={{ flex:1, textAlign:"left" }}>
-                            {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
-                            {h.subtext && <div style={{ fontSize:11, color:"#AAA", marginTop:2, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
-                          </div>
-                        </div>
+                        <HighlightRow h={h} color={day.color} borderBottom={!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none"} />
                         {h.quickService && <QuickServiceDining color={day.color} />}
                         {h.flight && FLIGHTS[day.weatherDate] && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><FlightStatus weatherDate={day.weatherDate} color={day.color} /></div>}
                       </>
