@@ -208,10 +208,7 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#2C5F8A", emoji: "✈️",
     parkId: null,
     highlights: [
-      { sortTime: 1030, icon: "✈️", text: "Depart PHL 5:50 PM · Arrive MCO 8:46 PM", flight: true, url: "https://www.flightaware.com/live/flight/AAL2531" },
-      { sortTime: 2035, icon: "🚤", text: "8:35 - 10:05 PM · Electrical Water Pageant", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/electrical-water-pageant/" },
-      { sortTime: 2115, icon: "🚐", text: "9:15 PM · Away We Go pickup · MCO → Grand Floridian", url: "https://awaywegoco.com/faqs" },
-      { sortTime: 2200, icon: "🏨", text: "~10:00 PM · Arrive Grand Floridian · Unpack & rest" },
+      { sortTime: 1750, icon: "✈️", text: "Depart PHL 5:50 PM · Arrive MCO 8:46 PM", flight: true, url: "https://www.flightaware.com/live/flight/AAL2531" },
     ]
   },
   {
@@ -220,14 +217,10 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#7B4F2E", emoji: "🌴",
     parkId: null,
     highlights: [
-      { sortTime:  930, icon: "🛺", text: "9:30 AM · Kingdom Strollers delivery", subtext: "Outside Grand Floridian main lobby near vintage car" },
-      { sortTime: 1100, icon: "🏨", text: "11:00 AM · Checkout / Drop bags with Bell Services" },
-      { sortTime: 1500, icon: "🏨", text: "~3:00 PM · Poly room ready · Bell Services delivers" },
       { sortTime: 1600, icon: "🍽️", text: "4:00 PM · 1900 Park Fare Dinner · Grand Floridian", url: "https://disneyworld.disney.go.com/dining/grand-floridian-resort-and-spa/1900-park-fare/menus/dinner/", reservations: [
         { party: "S Family", time: "4:00 PM", size: "4 guests", conf: "356081988915" },
         { party: "M Family", time: "4:00 PM", size: "5 guests", conf: "356081988915" },
       ]},
-      { sortTime: 2035, icon: "🚤", text: "8:35 - 10:05 PM · Electrical Water Pageant", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/electrical-water-pageant/" },
     ]
   },
   {
@@ -235,14 +228,7 @@ const days = [
     weatherDate: "2026-05-23", weatherLat: 28.4177, weatherLon: -81.5812, isoDate: "2026-05-23",
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#1A6B4A", emoji: "🏰",
     parkId: "mk",
-    highlights: [
-      { sortTime:  830, icon: "🏰", text: "8:30 AM · Early Entry begins", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-23/#/magic-kingdom/" },
-      { sortTime:  900, icon: "🏰", text: "9:00 AM · Park Open", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-23/#/magic-kingdom/" },
-      { sortTime: 2200, icon: "🏰", text: "10:00 PM · Park Close", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-23/#/magic-kingdom/" },
-      { sortTime: 2015, icon: "🌟", text: "8:15 PM · Disney Starlight: Dream the Night Away Parade", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/starlight-dream-night-away-parade/" },
-      { sortTime: 2035, icon: "🚤", text: "8:35 - 10:05 PM · Electrical Water Pageant", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/electrical-water-pageant/" },
-      { sortTime: 2200, icon: "🎆", text: "10:00 PM · Happily Ever After Fireworks", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/happily-ever-after-fireworks/" },
-    ]
+    highlights: []
   },
   {
     date: "Sun May 24", label: "Amenities Day", hotel: "Polynesian Villas & Bungalows → Riviera Resort",
@@ -254,8 +240,6 @@ const days = [
         { party: "S Family", time: "8:40 AM", size: "4 guests", conf: "356081979570" },
         { party: "M Family", time: "8:55 AM", size: "5 guests", conf: "356099140407" },
       ]},
-      { sortTime: 1100, icon: "🏨", text: "11:00 AM · Checkout / Drop bags with Bell Services" },
-      { sortTime: 1500, icon: "🏨", text: "~3:00 PM · Riviera room ready · Bell Services delivers" },
     ]
   },
   {
@@ -264,14 +248,9 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#4A2C6B", emoji: "🌐",
     parkId: "ep",
     highlights: [
-      { sortTime:  830, icon: "🌐", text: "8:30 AM · Early Entry begins", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-25/#/epcot/" },
-      { sortTime:  900, icon: "🌐", text: "9:00 AM · Park Open", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-25/#/epcot/" },
-      { sortTime: 2059, icon: "🌐", text: "9:00 PM · Park Close", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-25/#/epcot/" },
       { sortTime: 1125, icon: "👸", text: "11:25 AM · Akershus Princess Storybook Dining", url: "https://disneyworld.disney.go.com/dining/epcot/akershus-royal-banquet-hall/menus/breakfast/", reservations: [
         { party: "S + M Family", time: "11:25 AM", size: "9 guests", conf: "356081980073" },
       ]},
-      { sortTime: 2100, icon: "🎆", text: "9:00 PM · Luminous: The Symphony of Us Fireworks", url: "https://disneyworld.disney.go.com/entertainment/epcot/luminous-the-symphony-us/" },
-      { sortTime: 2100, icon: "🌙", text: "9:00–11:00 PM · Extended Evening Hours" },
     ]
   },
   {
@@ -280,13 +259,9 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#8A3A2C", emoji: "🎬",
     parkId: "hs",
     highlights: [
-      { sortTime:  830, icon: "🎬", text: "8:30 AM · Early Entry begins", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-26/#/hollywood-studios/" },
-      { sortTime:  900, icon: "🎬", text: "9:00 AM · Park Open", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-26/#/hollywood-studios/" },
-      { sortTime: 2059, icon: "🎬", text: "9:00 PM · Park Close", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-26/#/hollywood-studios/" },
       { sortTime: 1610, icon: "🍽️", text: "4:10 PM · Hollywood & Vine Fantasmic! Dining Package", url: "https://disneyworld.disney.go.com/dining/hollywood-studios/hollywood-and-vine/menus/dinner/", reservations: [
         { party: "S + M Family", time: "4:10 PM", size: "9 guests", conf: "356081979580" },
       ]},
-      { sortTime: 2100, icon: "🎆", text: "9:00 PM · Fantasmic! (8:30 seating)", url: "https://disneyworld.disney.go.com/entertainment/hollywood-studios/fantasmic/" },
     ]
   },
   {
@@ -295,13 +270,10 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#2C5F8A", emoji: "🏠",
     parkId: null,
     highlights: [
-      { sortTime: 1000, icon: "🛺", text: "10:00 AM · Kingdom Strollers pickup", subtext: "Outside Riviera main lobby near valet station" },
       { sortTime: 1100, icon: "🍽️", text: "11:00 AM · Topolino's Terrace Character Breakfast", url: "https://disneyworld.disney.go.com/dining/riviera-resort/topolinos-terrace/menus/breakfast/", reservations: [
         { party: "S Family", time: "11:00 AM", size: "4 guests", conf: "356081980082" },
         { party: "M Family", time: "11:10 AM", size: "5 guests", conf: "356081979581" },
       ]},
-      { sortTime: 1101, icon: "🏨", text: "11:00 AM · Checkout / Drop bags with Bell Services" },
-      { sortTime: 1300, icon: "🚐", text: "1:00 PM · Away We Go pickup · Riviera → MCO", url: "https://awaywegoco.com/faqs" },
       { sortTime: 1551, icon: "✈️", text: "Depart MCO 3:51 PM · Arrive PHL 6:35 PM", flight: true, url: "https://www.flightaware.com/live/flight/AAL810" },
     ]
   }
