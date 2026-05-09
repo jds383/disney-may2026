@@ -587,8 +587,6 @@ async function fetchDiningCredits() {
         resort:     props["Resort"]?.select?.name ?? "",
         creditType: props["Credit Type"]?.select?.name ?? "",
         creditNum:  props["Credit #"]?.number ?? 1,
-        used:       props["Used"]?.checkbox ?? false,
-        usedAt:     props["Used At"]?.rich_text?.[0]?.text?.content ?? "",
         dateUsed:   props["Date Used"]?.date?.start ?? null,
       };
     });
@@ -614,31 +612,34 @@ function DiningCredits({ isoDate }) {
     fetchDiningCredits().then(setCredits).catch(() => {});
   }, [isoDate]);
 
-  const handleToggle = async (pageId, currentUsed) => {
+  const handleToggle = async (pageId, currentlyUsed) => {
     const today = new Date().toISOString().split("T")[0];
+    const newDateUsed = currentlyUsed ? null : today;
     setCredits(prev => prev.map(c => c.pageId === pageId
-      ? { ...c, used: !currentUsed, dateUsed: !currentUsed ? today : null }
+      ? { ...c, dateUsed: newDateUsed }
       : c
     ));
     try {
       await fetch(`${WORKER_URL}/credits`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pageId, used: !currentUsed, dateUsed: !currentUsed ? today : null }),
+        body: JSON.stringify({ pageId, used: !currentlyUsed, dateUsed: newDateUsed }),
       });
     } catch (_) {
-      setCredits(prev => prev.map(c => c.pageId === pageId ? { ...c, used: currentUsed } : c));
+      // Revert on failure
+      setCredits(prev => prev.map(c => c.pageId === pageId ? { ...c, dateUsed: currentlyUsed ? today : null } : c));
     }
   };
 
-  const visibleCredits = (resort) => credits.filter(c => {
-    if (c.resort !== resort) return false;
-    if (c.used && c.dateUsed && c.dateUsed > isoDate) return false;
-    return true;
-  });
+  const isUsedOnOrBefore = (credit) => {
+    if (!credit.dateUsed) return false;
+    return credit.dateUsed <= isoDate;
+  };
+
+  const visibleCredits = (resort) => credits.filter(c => c.resort === resort);
 
   const remaining = (resort, type) =>
-    visibleCredits(resort).filter(c => c.creditType === type && !c.used).length;
+    visibleCredits(resort).filter(c => c.creditType === type && !isUsedOnOrBefore(c)).length;
 
   const grouped = (resort) => {
     const vc = visibleCredits(resort);
@@ -681,7 +682,7 @@ function DiningCredits({ isoDate }) {
             </div>
             <div style={{ display:"flex", gap:12 }}>
               {trackableTypes.map(type => {
-                const total = visibleCredits(resort).filter(c => c.creditType === type).length;
+                const total = credits.filter(c => c.resort === resort && c.creditType === type).length;
                 if (!total) return null;
                 const rem = remaining(resort, type);
                 return (
@@ -692,39 +693,42 @@ function DiningCredits({ isoDate }) {
               })}
             </div>
           </div>
-          {grouped(resort).map(({ family, persons }) => (
-            <div key={family} style={{ borderTop:"1px solid #F0EBE3" }}>
-              <div style={{ padding:"5px 16px 2px", fontSize:10, fontWeight:700, color:"#AAA", fontFamily:"'DM Sans',sans-serif", letterSpacing:"0.1em" }}>
-                {family === "S" ? "S FAMILY" : "M FAMILY"}
-              </div>
-              {persons.map(({ person, credits: pc }) => (
-                <div key={person} style={{ display:"flex", alignItems:"center", gap:8, padding:"4px 16px", borderBottom:"1px solid #F5F0EA" }}>
-                  <span style={{ fontSize:12, fontWeight:700, color:"#555", fontFamily:"'DM Sans',sans-serif", width:14, flexShrink:0 }}>{person}</span>
-                  <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                    {pc.map(({ type, items }) => (
-                      <div key={type} style={{ display:"flex", alignItems:"center", gap:3 }}>
-                        <span style={{ fontSize:11 }}>{CREDIT_ICONS[type]}</span>
-                        {items.map(credit => (
-                          <button
-                            key={credit.pageId}
-                            onClick={() => type !== "Sit Down" && handleToggle(credit.pageId, credit.used)}
-                            style={{
-                              width:18, height:18, borderRadius:3,
-                              border: credit.used ? "none" : "1.5px solid #CCC",
-                              background: credit.used ? (type === "Sit Down" ? "#C8E6C9" : "#4CAF50") : "#FFF",
-                              cursor: type === "Sit Down" ? "default" : "pointer",
-                              display:"flex", alignItems:"center", justifyContent:"center",
-                              fontSize:10, color:"#FFF", flexShrink:0,
-                            }}
-                          >{credit.used ? "✓" : ""}</button>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+          {/* Side by side families */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", borderTop:"1px solid #F0EBE3" }}>
+            {grouped(resort).map(({ family, persons }) => (
+              <div key={family} style={{ borderRight: family === "S" ? "1px solid #F0EBE3" : "none" }}>
+                <div style={{ padding:"5px 10px 2px", fontSize:10, fontWeight:700, color:"#AAA", fontFamily:"'DM Sans',sans-serif", letterSpacing:"0.1em" }}>
+                  {family === "S" ? "S FAMILY" : "M FAMILY"}
                 </div>
-              ))}
-            </div>
-          ))}
+                {persons.map(({ person, credits: pc }) => (
+                  <div key={person} style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 10px", borderBottom:"1px solid #F5F0EA" }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:"#555", fontFamily:"'DM Sans',sans-serif", width:12, flexShrink:0 }}>{person}</span>
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                      {pc.map(({ type, items }) => (
+                        <div key={type} style={{ display:"flex", alignItems:"center", gap:2 }}>
+                          <span style={{ fontSize:10 }}>{CREDIT_ICONS[type]}</span>
+                          {items.map(credit => (
+                            <button
+                              key={credit.pageId}
+                              onClick={() => handleToggle(credit.pageId, isUsedOnOrBefore(credit))}
+                              style={{
+                                width:16, height:16, borderRadius:3,
+                                border: isUsedOnOrBefore(credit) ? "none" : "1.5px solid #CCC",
+                                background: isUsedOnOrBefore(credit) ? "#4CAF50" : "#FFF",
+                                cursor: "pointer",
+                                display:"flex", alignItems:"center", justifyContent:"center",
+                                fontSize:9, color:"#FFF", flexShrink:0,
+                              }}
+                            >{isUsedOnOrBefore(credit) ? "✓" : ""}</button>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </div>
