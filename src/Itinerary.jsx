@@ -216,12 +216,7 @@ const days = [
     weatherDate: "2026-05-22", weatherLat: 28.4094, weatherLon: -81.5840, isoDate: "2026-05-22",
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#7B4F2E", emoji: "🌴",
     parkId: null,
-    highlights: [
-      { sortTime: 1600, icon: "🍽️", text: "4:00 PM · 1900 Park Fare Dinner · Grand Floridian", url: "https://disneyworld.disney.go.com/dining/grand-floridian-resort-and-spa/1900-park-fare/menus/dinner/", reservations: [
-        { party: "S Family", time: "4:00 PM", size: "4 guests", conf: "356081988915" },
-        { party: "M Family", time: "4:00 PM", size: "5 guests", conf: "356081988915" },
-      ]},
-    ]
+    highlights: []
   },
   {
     date: "Sat May 23", label: "Magic Kingdom", hotel: "Polynesian Villas & Bungalows",
@@ -235,34 +230,21 @@ const days = [
     weatherDate: "2026-05-24", weatherLat: 28.3613, weatherLon: -81.5588, isoDate: "2026-05-24",
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#7B4F2E", emoji: "🌴",
     parkId: null,
-    highlights: [
-      { sortTime:  840, icon: "🍽️", text: "8:40 AM · 'Ohana Breakfast · Polynesian", url: "https://disneyworld.disney.go.com/dining/polynesian-resort/ohana/menus/breakfast/", reservations: [
-        { party: "S Family", time: "8:40 AM", size: "4 guests", conf: "356081979570" },
-        { party: "M Family", time: "8:55 AM", size: "5 guests", conf: "356099140407" },
-      ]},
-    ]
+    highlights: []
   },
   {
     date: "Mon May 25", label: "EPCOT", hotel: "Riviera Resort",
     weatherDate: "2026-05-25", weatherLat: 28.3747, weatherLon: -81.5494, isoDate: "2026-05-25",
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#4A2C6B", emoji: "🌐",
     parkId: "ep",
-    highlights: [
-      { sortTime: 1125, icon: "👸", text: "11:25 AM · Akershus Princess Storybook Dining", url: "https://disneyworld.disney.go.com/dining/epcot/akershus-royal-banquet-hall/menus/breakfast/", reservations: [
-        { party: "S + M Family", time: "11:25 AM", size: "9 guests", conf: "356081980073" },
-      ]},
-    ]
+    highlights: []
   },
   {
     date: "Tue May 26", label: "Hollywood Studios", hotel: "Riviera Resort",
     weatherDate: "2026-05-26", weatherLat: 28.3575, weatherLon: -81.5583, isoDate: "2026-05-26",
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#8A3A2C", emoji: "🎬",
     parkId: "hs",
-    highlights: [
-      { sortTime: 1610, icon: "🍽️", text: "4:10 PM · Hollywood & Vine Fantasmic! Dining Package", url: "https://disneyworld.disney.go.com/dining/hollywood-studios/hollywood-and-vine/menus/dinner/", reservations: [
-        { party: "S + M Family", time: "4:10 PM", size: "9 guests", conf: "356081979580" },
-      ]},
-    ]
+    highlights: []
   },
   {
     date: "Wed May 27", label: "Departure Day", hotel: "Riviera Resort → Home",
@@ -270,10 +252,6 @@ const days = [
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#2C5F8A", emoji: "🏠",
     parkId: null,
     highlights: [
-      { sortTime: 1100, icon: "🍽️", text: "11:00 AM · Topolino's Terrace Character Breakfast", url: "https://disneyworld.disney.go.com/dining/riviera-resort/topolinos-terrace/menus/breakfast/", reservations: [
-        { party: "S Family", time: "11:00 AM", size: "4 guests", conf: "356081980082" },
-        { party: "M Family", time: "11:10 AM", size: "5 guests", conf: "356081979581" },
-      ]},
       { sortTime: 1551, icon: "✈️", text: "Depart MCO 3:51 PM · Arrive PHL 6:35 PM", flight: true, url: "https://www.flightaware.com/live/flight/AAL810" },
     ]
   }
@@ -333,6 +311,10 @@ async function fetchBookedLLs() {
           optional:   props["Optional"]?.checkbox ?? false,
           visibility: props["Visibility"]?.select?.name ?? "Show",
           pageId:     page.id,
+          icon:       props["Icon"]?.rich_text?.[0]?.text?.content ?? "",
+          url:        props["userDefined:URL"]?.url ?? "",
+          subtext:    props["Subtext"]?.rich_text?.[0]?.text?.content ?? "",
+          sortTime:   props["Sort Time"]?.number ?? 9999,
         };
       });
   } catch (_) { return []; }
@@ -410,9 +392,7 @@ function useWeather(date, lat, lon) {
   const [error, setError] = useState(null);
   useEffect(() => {
     if (!date||!lat||!lon) return;
-    const tripStart = new Date("2026-05-05");
-    const targetDate = new Date(date);
-    if (targetDate > tripStart && targetDate > new Date()) { setError("not yet available"); return; }
+    // Attempt weather fetch for any date - show "no data" if unavailable
     (async () => {
       const cached = getCachedWeather(date);
       if (cached) { setWeather(cached); return; }
@@ -435,7 +415,7 @@ function useWeather(date, lat, lon) {
 }
 
 function WeatherStack({ weather, error }) {
-  if (error==="not yet available") return <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:20,lineHeight:1,marginBottom:4}}>📅</div><div style={{fontSize:9,color:"rgba(255,255,255,0.35)",fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>not yet available</div></div>;
+  if (error==="not yet available") return <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:9,color:"rgba(255,255,255,0.35)",fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>no data</div></div>;
   if (error) return <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,lineHeight:1,marginBottom:4}}>⚠️</div><div style={{fontSize:9,color:"rgba(255,255,255,0.5)",fontFamily:"'DM Sans',sans-serif",maxWidth:100,wordBreak:"break-all"}}>{error}</div></div>;
   if (!weather) return <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:16,lineHeight:1,marginBottom:4}}>🌡️</div><div style={{fontSize:9,color:"rgba(255,255,255,0.35)",fontFamily:"'DM Sans',sans-serif",whiteSpace:"nowrap"}}>fetching...</div></div>;
   return (
@@ -472,16 +452,19 @@ function LLRow({ h, color, borderBottom, onSkip }) {
     "Star Wars Photo (D. Visa)":        "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#starwarscharacterexperience",
     "Mystery Character Meet (D. Visa)": "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#characterexperience",
   };
-  const rideUrl = isMeet
+  // Use URL from Notion if available, otherwise fall back to ride lookup
+  const rideUrl = h.url || (isMeet
     ? MEET_URLS[h.rideName] ?? RIDES.find(r => r.name === h.rideName)?.url ?? null
     : isResort ? null
-    : RIDES.find(r => r.id === h.rideId)?.url;
-  const locationStr = h.resort
+    : RIDES.find(r => r.id === h.rideId)?.url);
+  // Use subtext from Notion, then resort/location as fallback
+  const locationStr = h.subtext || (h.resort
     ? (h.location ? `${h.resort} · ${h.location}` : h.resort)
-    : (h.location || null);
-  const timeStr = h.startTime + (h.endTime ? ` – ${h.endTime}` : "");
+    : (h.location || null));
+  const timeStr = (h.startTime && h.startTime !== "TBD") ? h.startTime + (h.endTime ? ` – ${h.endTime}` : "") : "";
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
-  const fullText = `${timeStr} · ${h.rideName}${partyStr}${rideUrl ? " ↗" : ""}`;
+  const nameStr = h.rideName;
+  const fullText = [timeStr, nameStr + partyStr].filter(Boolean).join(" · ") + (rideUrl ? " ↗" : "");
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 22px", borderBottom, background: style.bg }}>
       <span style={{ fontSize:14, flexShrink:0 }}>{h.icon}</span>
@@ -775,8 +758,8 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
       .filter(ll => ll.date === day.isoDate && (ll.visibility === "Show" || !ll.visibility) && !isLLExpired(ll.endTime, ll.date))
       .map(ll => ({
         _type: "ll",
-        sortTime: parseTimeToInt(ll.startTime),
-        icon: ll.type === "Character Meet" ? "🧸" : ll.type === "Resort Activity" ? "🏨" : "⚡",
+        sortTime: ll.sortTime ?? parseTimeToInt(ll.startTime),
+        icon: ll.icon || (ll.type === "Character Meet" ? "🧸" : ll.type === "Resort Activity" ? "🏨" : "⚡"),
         rideName: ll.rideName,
         startTime: ll.startTime,
         endTime: ll.endTime,
@@ -788,6 +771,8 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
         optional: ll.optional,
         visibility: ll.visibility,
         pageId: ll.pageId,
+        url: ll.url,
+        subtext: ll.subtext,
       }));
     return [...base, ...llsForDay].sort((a, b) => (a.sortTime ?? 9999) - (b.sortTime ?? 9999));
   })();
@@ -959,16 +944,13 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                       </div>
                     ) : (
                       <>
-                        {!h.reservations && (
-                          <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}>
-                            <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
-                            <div style={{ flex:1, textAlign:"left" }}>
-                              {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
-                              {h.subtext && <div style={{ fontSize:11, color:"#AAA", marginTop:2, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
-                            </div>
+                        <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderBottom:!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}>
+                          <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{h.icon}</span>
+                          <div style={{ flex:1, textAlign:"left" }}>
+                            {h.url ? <a href={h.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:day.color, lineHeight:1.5, textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text} ↗</a> : <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, textAlign:"left", fontWeight:400, fontFamily:"'DM Sans',sans-serif" }}>{h.text}</span>}
+                            {h.subtext && <div style={{ fontSize:11, color:"#AAA", marginTop:2, textAlign:"left", fontFamily:"'DM Sans',sans-serif" }}>{h.subtext}</div>}
                           </div>
-                        )}
-                        {h.reservations && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><ReservationBadges reservations={h.reservations} color={day.color} icon={h.icon} text={h.text} url={h.url} /></div>}
+                        </div>
                         {h.quickService && <QuickServiceDining color={day.color} />}
                         {h.flight && FLIGHTS[day.weatherDate] && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><FlightStatus weatherDate={day.weatherDate} color={day.color} /></div>}
                       </>
