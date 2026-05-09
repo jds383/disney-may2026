@@ -444,6 +444,7 @@ const ACTIVITY_STYLES = {
   "Resort Activity":{ bg: "transparent", badge: "🏨 Resort", badgeBg: "#DBEAFE", badgeColor: "#1E40AF", badgeBorder: "#93C5FD" },
 };
 function LLRow({ h, color, borderBottom, onSkip }) {
+  const [open, setOpen] = useState(false);
   const isMeet = h.type === "Character Meet";
   const isResort = h.type === "Resort Activity";
   const style = ACTIVITY_STYLES[h.type] || ACTIVITY_STYLES["LL"];
@@ -452,13 +453,13 @@ function LLRow({ h, color, borderBottom, onSkip }) {
     "Star Wars Photo (D. Visa)":        "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#starwarscharacterexperience",
     "Mystery Character Meet (D. Visa)": "https://disneyrewards.com/parks-and-vacations/walt-disney-world-perks/#characterexperience",
   };
-  // Use URL from Notion if available, otherwise fall back to ride lookup
   const rideUrl = h.url || (isMeet
     ? MEET_URLS[h.rideName] ?? RIDES.find(r => r.name === h.rideName)?.url ?? null
     : isResort ? null
     : RIDES.find(r => r.id === h.rideId)?.url);
-  // Use subtext from Notion, then resort/location as fallback
-  const locationStr = h.subtext || (h.resort
+  // subtext from Notion is collapsible; location/resort shown inline
+  const collapsibleText = h.subtext || null;
+  const locationStr = !h.subtext && (h.resort
     ? (h.location ? `${h.resort} · ${h.location}` : h.resort)
     : (h.location || null));
   const timeStr = (h.startTime && h.startTime !== "TBD") ? h.startTime + (h.endTime ? ` – ${h.endTime}` : "") : "";
@@ -466,19 +467,32 @@ function LLRow({ h, color, borderBottom, onSkip }) {
   const nameStr = h.rideName;
   const fullText = [timeStr, nameStr + partyStr].filter(Boolean).join(" · ") + (rideUrl ? " ↗" : "");
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 22px", borderBottom, background: style.bg }}>
-      <span style={{ fontSize:14, flexShrink:0 }}>{h.icon}</span>
-      <div style={{ flex:1 }}>
-        {rideUrl
-          ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, display:"block", textAlign:"left" }}>{fullText}</a>
-          : <span style={{ fontSize:13, color:"#1A1A1A", fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText}</span>
-        }
-        {locationStr && (
-          <span style={{ fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:1, textAlign:"left" }}>{locationStr}</span>
+    <div style={{ borderBottom, background: style.bg }}>
+      <div
+        onClick={() => collapsibleText && setOpen(o => !o)}
+        style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 22px", cursor: collapsibleText ? "pointer" : "default" }}
+      >
+        <span style={{ fontSize:14, flexShrink:0 }}>{h.icon}</span>
+        <div style={{ flex:1 }}>
+          {rideUrl
+            ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, display:"block", textAlign:"left" }}>{fullText}</a>
+            : <span style={{ fontSize:13, color:"#1A1A1A", fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText}</span>
+          }
+          {locationStr && (
+            <span style={{ fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:1, textAlign:"left" }}>{locationStr}</span>
+          )}
+        </div>
+        {collapsibleText && (
+          <span style={{ fontSize:11, color:"#CCC", flexShrink:0, transition:"transform 0.2s", display:"inline-block", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+        )}
+        {h.optional && onSkip && (
+          <button onClick={e => { e.stopPropagation(); onSkip(h.pageId); }} style={{ fontSize:10, color:"#AAA", background:"none", border:"1px solid #EDE8E1", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Skip</button>
         )}
       </div>
-      {h.optional && onSkip && (
-        <button onClick={() => onSkip(h.pageId)} style={{ fontSize:10, color:"#AAA", background:"none", border:"1px solid #EDE8E1", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Skip</button>
+      {open && collapsibleText && (
+        <div style={{ padding:"0 22px 8px 44px", fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", lineHeight:1.5 }}>
+          {collapsibleText}
+        </div>
       )}
     </div>
   );
