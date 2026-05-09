@@ -222,11 +222,6 @@ const days = [
     highlights: [
       { sortTime:  930, icon: "🛺", text: "9:30 AM · Kingdom Strollers delivery", subtext: "Outside Grand Floridian main lobby near vintage car" },
       { sortTime: 1100, icon: "🏨", text: "11:00 AM · Checkout / Drop bags with Bell Services" },
-      { sortTime: 1300, alternatives: [
-        { icon: "🏊", title: "Resort Pools", segments: [{ text: "Grand Floridian Beach Pool", url: "https://disneyworld.disney.go.com/recreation/grand-floridian-resort-and-spa/pools-grand-floridian-resort-and-spa/" }, { text: " or ", url: null }, { text: "Polynesian Pool", url: "https://disneyworld.disney.go.com/recreation/polynesian-resort/pools-polynesian-village-resort/" }, { text: " · 9 AM–11 PM", url: null }] },
-        { icon: "🌊", title: "Water Park", segments: [{ text: "Typhoon Lagoon", url: "https://disneyworld.disney.go.com/destinations/typhoon-lagoon/" }, { text: " or ", url: null }, { text: "Blizzard Beach", url: "https://disneyworld.disney.go.com/destinations/blizzard-beach/" }, { text: " · 10 AM–5 PM · Free on check-in day", url: null }] },
-        { icon: "🐴", title: "Tri-Circle-D Ranch", segments: [{ text: "Fort Wilderness", url: "https://disneyworld.disney.go.com/recreation/fort-wilderness-resort/tri-circle-d-ranch/" }, { text: " · pony rides, horses, farm animals · via bus or water taxi", url: null }] },
-      ]},
       { sortTime: 1500, icon: "🏨", text: "~3:00 PM · Poly room ready · Bell Services delivers" },
       { sortTime: 1600, icon: "🍽️", text: "4:00 PM · 1900 Park Fare Dinner · Grand Floridian", url: "https://disneyworld.disney.go.com/dining/grand-floridian-resort-and-spa/1900-park-fare/menus/dinner/", reservations: [
         { party: "S Family", time: "4:00 PM", size: "4 guests", conf: "356081988915" },
@@ -244,7 +239,6 @@ const days = [
       { sortTime:  830, icon: "🏰", text: "8:30 AM · Early Entry begins", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-23/#/magic-kingdom/" },
       { sortTime:  900, icon: "🏰", text: "9:00 AM · Park Open", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-23/#/magic-kingdom/" },
       { sortTime: 2200, icon: "🏰", text: "10:00 PM · Park Close", url: "https://disneyworld.disney.go.com/calendars/day/2026-05-23/#/magic-kingdom/" },
-      { sortTime: 1130, icon: "🍽️", text: "Quick Service Options", quickService: true },
       { sortTime: 2015, icon: "🌟", text: "8:15 PM · Disney Starlight: Dream the Night Away Parade", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/starlight-dream-night-away-parade/" },
       { sortTime: 2035, icon: "🚤", text: "8:35 - 10:05 PM · Electrical Water Pageant", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/electrical-water-pageant/" },
       { sortTime: 2200, icon: "🎆", text: "10:00 PM · Happily Ever After Fireworks", url: "https://disneyworld.disney.go.com/entertainment/magic-kingdom/happily-ever-after-fireworks/" },
@@ -261,11 +255,6 @@ const days = [
         { party: "M Family", time: "8:55 AM", size: "5 guests", conf: "356099140407" },
       ]},
       { sortTime: 1100, icon: "🏨", text: "11:00 AM · Checkout / Drop bags with Bell Services" },
-      { sortTime: 1300, alternatives: [
-        { icon: "🏊", title: "Resort Pools", segments: [{ text: "Polynesian Pool", url: "https://disneyworld.disney.go.com/recreation/polynesian-resort/pools-polynesian-village-resort/" }, { text: " or ", url: null }, { text: "Riviera Pool", url: "https://disneyworld.disney.go.com/recreation/riviera-resort/pools-riviera-resort/" }, { text: " · 9 AM–11 PM", url: null }] },
-        { icon: "🌊", title: "Water Park", segments: [{ text: "Typhoon Lagoon", url: "https://disneyworld.disney.go.com/destinations/typhoon-lagoon/" }, { text: " or ", url: null }, { text: "Blizzard Beach", url: "https://disneyworld.disney.go.com/destinations/blizzard-beach/" }, { text: " · 10 AM–5 PM · Free on check-in day", url: null }] },
-        { icon: "🐴", title: "Tri-Circle-D Ranch", segments: [{ text: "Fort Wilderness", url: "https://disneyworld.disney.go.com/recreation/fort-wilderness-resort/tri-circle-d-ranch/" }, { text: " · pony rides, horses, farm animals · via bus or water taxi", url: null }] },
-      ]},
       { sortTime: 1500, icon: "🏨", text: "~3:00 PM · Riviera room ready · Bell Services delivers" },
     ]
   },
@@ -605,12 +594,13 @@ function getActiveResorts(isoDate) {
 function DiningCredits({ isoDate }) {
   const [credits, setCredits] = useState([]);
   const [open, setOpen] = useState(false);
-  const activeResorts = getActiveResorts(isoDate);
-  if (activeResorts.length === 0) return null;
 
   useEffect(() => {
     fetchDiningCredits().then(setCredits).catch(() => {});
   }, [isoDate]);
+
+  const activeResorts = getActiveResorts(isoDate);
+  if (activeResorts.length === 0) return null;
 
   const handleToggle = async (pageId, currentlyUsed) => {
     const today = new Date().toISOString().split("T")[0];
@@ -970,7 +960,17 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                 {mergedHighlights.map((h, hi) => (
                   <div key={hi}>
                     {h._type === "ll" ? (
-                      <LLRow h={h} color={day.color} borderBottom={hi < mergedHighlights.length - 1 ? "1px solid #F5F0EA" : "none"} onSkip={(pageId) => updateVisibility(pageId, "Archive")} />
+                      h.rideName?.toLowerCase().includes("quick service") ? (
+                        <>
+                          <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 22px", borderTop:"1px solid #F5F0EA" }}>
+                            <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>🍽️</span>
+                            <span style={{ fontSize:13, color:"#2A2A2A", lineHeight:1.5, fontFamily:"'DM Sans',sans-serif" }}>Quick Service Options</span>
+                          </div>
+                          <QuickServiceDining color={day.color} />
+                        </>
+                      ) : (
+                        <LLRow h={h} color={day.color} borderBottom={hi < mergedHighlights.length - 1 ? "1px solid #F5F0EA" : "none"} onSkip={(pageId) => updateVisibility(pageId, "Archive")} />
+                      )
                     ) : h.alternatives ? (
                       <div style={{ borderTop:"1px solid #F5F0EA" }}>
                         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, padding:"12px 12px" }}>
@@ -1004,10 +1004,10 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                   </div>
                 ))}
               </div>
-            </div>
 
-            {/* Past & Declined */}
-            <ArchivedSection archivedLLs={archivedLLs} onRestore={(pageId) => updateVisibility(pageId, "Show")} />
+              {/* Past & Declined */}
+              <ArchivedSection archivedLLs={archivedLLs} onRestore={(pageId) => updateVisibility(pageId, "Show")} />
+            </div>
 
             {/* Dining Credits */}
             <DiningCredits isoDate={day.isoDate} />
