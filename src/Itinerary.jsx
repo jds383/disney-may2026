@@ -782,6 +782,9 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   const activeLoc = weatherLocs[locIdx % weatherLocs.length];
   const { weather, error: weatherError } = useWeather(day.weatherDate, activeLoc.lat, activeLoc.lon);
 
+  // Reset locIdx when switching days
+  useEffect(() => { setLocIdx(0); }, [activeDay]);
+
   // Auto-rotate every 5 seconds on days with multiple locations
   useEffect(() => {
     if (weatherLocs.length < 2) return;
