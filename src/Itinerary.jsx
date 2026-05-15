@@ -214,6 +214,7 @@ const days = [
   {
     date: "Fri May 22", label: "Amenities Day", hotel: "Villas at Grand Floridian → Polynesian Villas & Bungalows",
     weatherDate: "2026-05-22", weatherLat: 28.4094, weatherLon: -81.5840, isoDate: "2026-05-22",
+    weatherLocations: [{label:"Grand Floridian", lat:28.4094, lon:-81.5840}, {label:"Polynesian", lat:28.4177, lon:-81.5812}],
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#7B4F2E", emoji: "🌴",
     parkId: null,
     highlights: []
@@ -228,6 +229,7 @@ const days = [
   {
     date: "Sun May 24", label: "Amenities Day", hotel: "Polynesian Villas & Bungalows → Riviera Resort",
     weatherDate: "2026-05-24", weatherLat: 28.3613, weatherLon: -81.5588, isoDate: "2026-05-24",
+    weatherLocations: [{label:"Polynesian", lat:28.4177, lon:-81.5812}, {label:"Riviera", lat:28.3613, lon:-81.5588}],
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#7B4F2E", emoji: "🌴",
     parkId: null,
     highlights: []
@@ -773,7 +775,19 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   const day = days[activeDay];
   const [rooms, setRooms] = useState({});
   const [bookedLLs, setBookedLLs] = useState([]);
-  const { weather, error: weatherError } = useWeather(day.weatherDate, day.weatherLat, day.weatherLon);
+
+  // Weather carousel — cycles through locations for transition days
+  const weatherLocs = day.weatherLocations || [{lat: day.weatherLat, lon: day.weatherLon, label: null}];
+  const [locIdx, setLocIdx] = useState(0);
+  const activeLoc = weatherLocs[locIdx % weatherLocs.length];
+  const { weather, error: weatherError } = useWeather(day.weatherDate, activeLoc.lat, activeLoc.lon);
+
+  // Auto-rotate every 5 seconds on days with multiple locations
+  useEffect(() => {
+    if (weatherLocs.length < 2) return;
+    const timer = setInterval(() => setLocIdx(i => (i + 1) % weatherLocs.length), 5000);
+    return () => clearInterval(timer);
+  }, [activeDay, weatherLocs.length]);
 
   useEffect(() => {
     try { const r = localStorage.getItem("dw2026-rooms"); if (r) setRooms(JSON.parse(r)); } catch(_) {}
@@ -950,7 +964,19 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                       </div>
                     )}
                   </div>
-                  <WeatherStack weather={weather} error={weatherError} />
+                  <div style={{ textAlign:"right", flexShrink:0 }} onClick={() => weatherLocs.length > 1 && setLocIdx(i => (i + 1) % weatherLocs.length)}>
+                    <WeatherStack weather={weather} error={weatherError} />
+                    {weatherLocs.length > 1 && (
+                      <div style={{ display:"flex", justifyContent:"flex-end", gap:4, marginTop:4 }}>
+                        {weatherLocs.map((_, i) => (
+                          <div key={i} style={{ width:5, height:5, borderRadius:"50%", background: i === locIdx % weatherLocs.length ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.3)", cursor:"pointer" }} />
+                        ))}
+                      </div>
+                    )}
+                    {weatherLocs.length > 1 && activeLoc.label && (
+                      <div style={{ fontSize:8, color:"rgba(255,255,255,0.5)", fontFamily:"'DM Sans',sans-serif", marginTop:2 }}>{activeLoc.label}</div>
+                    )}
+                  </div>
                 </div>
                 <WeatherAlert weather={weather} />
               </div>
