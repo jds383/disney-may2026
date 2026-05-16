@@ -444,13 +444,13 @@ function LLRow({ h, color, borderBottom, onSkip }) {
     : RIDES.find(r => r.id === h.rideId)?.url);
   // subtext from Notion is collapsible; location/resort shown inline
   const collapsibleText = h.subtext || null;
+  const isFlight = h.type === "Flight";
   const locationStr = !h.subtext && !isFlight && (h.resort
     ? (h.location ? `${h.resort} · ${h.location}` : h.resort)
     : (h.location || null));
   const timeStr = (h.startTime && h.startTime !== "TBD") ? h.startTime + (h.endTime ? ` – ${h.endTime}` : "") : "";
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
   const nameStr = h.rideName;
-  const isFlight = h.type === "Flight";
   const fullText = isFlight
     ? [h.startTime, nameStr, h.endTime].filter(Boolean).join(" · ") + (rideUrl ? " ↗" : "")
     : [timeStr, nameStr + partyStr].filter(Boolean).join(" · ") + (rideUrl ? " ↗" : "");
