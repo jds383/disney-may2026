@@ -496,11 +496,13 @@ function LLRow({ h, color, borderBottom, onSkip, testDate }) {
     : isResort ? null
     : RIDES.find(r => r.id === h.rideId)?.url);
   // subtext from Notion is collapsible; location/resort shown inline
-  const collapsibleText = h.subtext || null;
   const isFlight = h.type === "Flight";
-  const locationStr = !h.subtext && !isFlight && (h.resort
+  const locationPart = !isFlight && (h.resort
     ? (h.location ? `${h.resort} · ${h.location}` : h.resort)
     : (h.location || null));
+  const collapsibleText = locationPart && h.subtext
+    ? `${locationPart} · ${h.subtext}`
+    : (h.subtext || locationPart || null);
   const timeStr = (h.startTime && h.startTime !== "TBD") ? h.startTime + (h.endTime ? ` – ${h.endTime}` : "") : "";
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
   const nameStr = h.rideName;
@@ -519,9 +521,6 @@ function LLRow({ h, color, borderBottom, onSkip, testDate }) {
             ? <a href={rideUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize:13, color, fontWeight:400, fontFamily:"'DM Sans',sans-serif", textDecoration:"underline", textDecorationStyle:"dotted", textUnderlineOffset:3, display:"block", textAlign:"left" }}>{fullText}</a>
             : <span style={{ fontSize:13, color:"#1A1A1A", fontWeight:400, fontFamily:"'DM Sans',sans-serif", display:"block", textAlign:"left" }}>{fullText}</span>
           }
-          {locationStr && (
-            <span style={{ fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:1, textAlign:"left" }}>{locationStr}</span>
-          )}
         </div>
         {h.optional && onSkip && (
           <button onClick={e => { e.stopPropagation(); onSkip(h.pageId); }} style={{ fontSize:10, color:"#AAA", background:"none", border:"1px solid #EDE8E1", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Skip</button>
