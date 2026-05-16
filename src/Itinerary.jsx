@@ -32,25 +32,18 @@ const parseFlight = (data) => {
 function FlightStatus({ flightNumber, flightDate, schedDep, schedArr, color }) {
   const [live, setLive] = useState(null);
   const [spinning, setSpinning] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(null);
 
   const fetchData = async () => {
     if (!flightNumber || !flightDate) return;
     setSpinning(true);
     const today = new Date().toISOString().split("T")[0];
-    if (today !== flightDate) {
-      await new Promise(r => setTimeout(r, 600));
-      setLastUpdated(`as of: ${new Date().toLocaleDateString("en-US", { month: "numeric", day: "2-digit" })} ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} · no live data yet`);
-      setSpinning(false);
-      return;
-    }
+    if (today !== flightDate) { setSpinning(false); return; }
     try {
       const res = await fetch(`https://api.aviationstack.com/v1/flights?access_key=67e59f674eef0dc0ceefbdbd984e9f19&flight_iata=${flightNumber}&flight_date=${flightDate}`);
       const data = await res.json();
       const parsed = parseFlight(data);
       if (parsed) setLive(parsed);
-      setLastUpdated(`as of: ${new Date().toLocaleDateString("en-US", { month: "numeric", day: "2-digit" })} ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`);
-    } catch (_) { setLastUpdated("check failed"); }
+    } catch (_) {}
     setSpinning(false);
   };
 
@@ -58,36 +51,14 @@ function FlightStatus({ flightNumber, flightDate, schedDep, schedArr, color }) {
 
   const d = live || { status: "Scheduled", gate_dep: "—", gate_arr: "—", terminal_dep: "—", terminal_arr: "—", actual_dep: schedDep || "—", actual_arr: schedArr || "—", live: false };
   const statusColor = STATUS_COLORS[d.status] || "#888";
-  const isLive = d.live;
+  const depPart = `Dep ${d.actual_dep}${d.terminal_dep !== "—" ? ` T${d.terminal_dep}` : ""}${d.gate_dep !== "—" ? ` G${d.gate_dep}` : ""}`;
+  const arrPart = `Arr ${d.actual_arr}${d.terminal_arr !== "—" ? ` T${d.terminal_arr}` : ""}${d.gate_arr !== "—" ? ` G${d.gate_arr}` : ""}`;
 
   return (
-    <div style={{ margin: "0", borderTop: "1px solid rgba(0,0,0,0.06)", background: "#FAFAF8" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 22px 6px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 11, color: "#888" }}>{flightNumber}</span>
-          <span style={{ fontSize: 10, background: statusColor + "22", color: statusColor, border: `1px solid ${statusColor}44`, borderRadius: 20, padding: "1px 8px", fontFamily: "'DM Sans', sans-serif" }}>{d.status}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 5, height: 5, borderRadius: "50%", background: isLive ? "#27AE60" : "#CCC", boxShadow: isLive ? "0 0 4px #27AE60" : "none" }} />
-          <span style={{ fontSize: 9, color: "#AAA", fontFamily: "'DM Sans', sans-serif" }}>
-            {lastUpdated || `as of: ${new Date().toLocaleDateString("en-US", { month: "numeric", day: "2-digit" })} ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} · no live data yet`}
-          </span>
-          <button onClick={e => { e.stopPropagation(); fetchData(); }} style={{ fontSize: 13, background: "none", border: "none", cursor: "pointer", color: "#BBB", padding: "0 2px", lineHeight: 1, display: "inline-flex", alignItems: "center", transform: spinning ? "rotate(180deg)" : "none", transition: "transform 0.4s ease" }}>↻</button>
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "0 22px 12px", gap: "4px 0" }}>
-        {[
-          { label: "Sched Dep", val: schedDep || "—" }, { label: "Sched Arr", val: schedArr || "—" },
-          { label: "Actual Dep", val: d.actual_dep },  { label: "Actual Arr", val: d.actual_arr },
-          { label: "Terminal (Dep)", val: d.terminal_dep }, { label: "Terminal (Arr)", val: d.terminal_arr },
-          { label: "Gate (Dep)", val: d.gate_dep },    { label: "Gate (Arr)", val: d.gate_arr },
-        ].map(({ label, val }) => (
-          <div key={label} style={{ padding: "4px 0" }}>
-            <div style={{ fontSize: 9, color: "#AAA", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</div>
-            <div style={{ fontSize: 14, color: val === "—" ? "#DDD" : "#1A1A1A" }}>{val}</div>
-          </div>
-        ))}
-      </div>
+    <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 22px 6px 50px" }}>
+      <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:8, background:statusColor+"22", color:statusColor, border:`1px solid ${statusColor}44`, whiteSpace:"nowrap", fontFamily:"'DM Sans',sans-serif" }}>{d.status}</span>
+      <span style={{ fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", flex:1 }}>{flightNumber} · {depPart} · {arrPart}</span>
+      <button onClick={e => { e.stopPropagation(); fetchData(); }} style={{ fontSize:12, background:"none", border:"none", cursor:"pointer", color:"#CCC", padding:0, lineHeight:1, display:"inline-flex", alignItems:"center", transform:spinning?"rotate(180deg)":"none", transition:"transform 0.4s ease", flexShrink:0 }}>↻</button>
     </div>
   );
 }
