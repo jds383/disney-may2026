@@ -14,13 +14,20 @@ const fmt = (iso) => {
 
 const parseFlight = (data) => {
   try {
-    // AeroDataBox returns an array directly
     const f = Array.isArray(data) ? data[0] : data?.data?.[0];
     if (!f) return null;
-    const fmtAero = (dt) => {
-      if (!dt) return "—";
-      const d = new Date(dt);
-      return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+    const fmtAero = (timeObj) => {
+      if (!timeObj) return "—";
+      // Use local time string directly — format is "2026-05-16 16:19-04:00"
+      const local = timeObj.local || timeObj.utc;
+      if (!local) return "—";
+      // Extract just the time portion HH:MM
+      const match = local.match(/\d{4}-\d{2}-\d{2}\s+(\d{2}:\d{2})/);
+      if (!match) return "—";
+      const [h, m] = match[1].split(":").map(Number);
+      const ampm = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 || 12;
+      return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
     };
     return {
       status: f.status ? f.status.charAt(0).toUpperCase() + f.status.slice(1).toLowerCase() : "Scheduled",
@@ -28,8 +35,8 @@ const parseFlight = (data) => {
       gate_arr: f.arrival?.gate || "—",
       terminal_dep: f.departure?.terminal || "—",
       terminal_arr: f.arrival?.terminal || "—",
-      actual_dep: fmtAero(f.departure?.actualTime || f.departure?.revisedTime || f.departure?.scheduledTime),
-      actual_arr: fmtAero(f.arrival?.actualTime || f.arrival?.revisedTime || f.arrival?.scheduledTime),
+      actual_dep: fmtAero(f.departure?.runwayTime || f.departure?.revisedTime || f.departure?.scheduledTime),
+      actual_arr: fmtAero(f.arrival?.runwayTime || f.arrival?.revisedTime || f.arrival?.scheduledTime),
       baggage: f.arrival?.baggageBelt || "—",
       live: true,
     };
