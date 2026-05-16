@@ -9,7 +9,7 @@ const STATUS_COLORS = {
 
 const fmt = (iso) => {
   try { return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }); }
-  catch (_err) { return "—"; }
+  catch (e) { return "—"; }
 };
 
 const parseFlight = (data) => {
@@ -26,7 +26,7 @@ const parseFlight = (data) => {
       actual_arr: fmt(f.arrival?.actual || f.arrival?.estimated),
       live: true,
     };
-  } catch (_err) { return null; }
+  } catch (e) { return null; }
 };
 
 function FlightStatus({ flightNumber, flightDate, schedDep, schedArr, color }) {
@@ -43,7 +43,7 @@ function FlightStatus({ flightNumber, flightDate, schedDep, schedArr, color }) {
       const data = await res.json();
       const parsed = parseFlight(data);
       if (parsed) setLive(parsed);
-    } catch (_err) {}
+    } catch (e) {}
     setSpinning(false);
   };
 
@@ -276,7 +276,7 @@ async function fetchBookedLLs() {
           sortTime:   props["Sort Time"]?.number ?? 9999,
         };
       });
-  } catch (_err) { return []; }
+  } catch (e) { return []; }
 }
 
 async function fetchCalendar() {
@@ -300,7 +300,7 @@ async function fetchCalendar() {
       };
     });
     return map;
-  } catch (_err) { return {}; }
+  } catch (e) { return {}; }
 }
 
 function Countdown() {
@@ -365,10 +365,10 @@ function Fireworks() {
 
 const WMO_ICON = { 0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",51:"🌦️",53:"🌦️",55:"🌧️",61:"🌧️",63:"🌧️",65:"🌧️",80:"🌦️",81:"🌧️",82:"🌧️",95:"⛈️",96:"⛈️",99:"⛈️" };
 const WMO_LABEL = { 0:"Clear",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",45:"Foggy",48:"Foggy",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",61:"Light rain",63:"Rain",65:"Heavy rain",80:"Rain showers",81:"Rain showers",82:"Heavy showers",95:"Thunderstorms",96:"Thunderstorms",99:"Thunderstorms" };
-const fmtHour = (t) => { try { return new Date(t).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); } catch (_err){return "";} };
+const fmtHour = (t) => { try { return new Date(t).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); } catch (e){return "";} };
 const WEATHER_CACHE_KEY = "dw2026-weather-cache";
-const getCachedWeather = (dk) => { try { const raw=localStorage.getItem(WEATHER_CACHE_KEY); if(!raw)return null; const cache=JSON.parse(raw); const entry=cache[dk]; if(!entry)return null; const dateOnly=dk.split('|')[0]; const ttl=(dateOnly===new Date().toISOString().split("T")[0]||dateOnly===new Date(Date.now()+86400000).toISOString().split("T")[0])?3600000:86400000; if(Date.now()-entry.fetchedAt<ttl)return entry.weather; return null; } catch (_err){return null;} };
-const setCachedWeather = (dk,w) => { try { let cache={}; try{const raw=localStorage.getItem(WEATHER_CACHE_KEY);if(raw)cache=JSON.parse(raw);}catch (_err){} cache[dk]={weather:w,fetchedAt:Date.now()}; localStorage.setItem(WEATHER_CACHE_KEY,JSON.stringify(cache)); } catch (_err){} };
+const getCachedWeather = (dk) => { try { const raw=localStorage.getItem(WEATHER_CACHE_KEY); if(!raw)return null; const cache=JSON.parse(raw); const entry=cache[dk]; if(!entry)return null; const dateOnly=dk.split('|')[0]; const ttl=(dateOnly===new Date().toISOString().split("T")[0]||dateOnly===new Date(Date.now()+86400000).toISOString().split("T")[0])?3600000:86400000; if(Date.now()-entry.fetchedAt<ttl)return entry.weather; return null; } catch (e){return null;} };
+const setCachedWeather = (dk,w) => { try { let cache={}; try{const raw=localStorage.getItem(WEATHER_CACHE_KEY);if(raw)cache=JSON.parse(raw);}catch (e){} cache[dk]={weather:w,fetchedAt:Date.now()}; localStorage.setItem(WEATHER_CACHE_KEY,JSON.stringify(cache)); } catch (e){} };
 
 function useWeather(date, lat, lon) {
   const [weather, setWeather] = useState(null);
@@ -545,7 +545,7 @@ async function fetchDiningCredits() {
         dateUsed:   props["Date Used"]?.date?.start ?? null,
       };
     });
-  } catch (_err) { return []; }
+  } catch (e) { return []; }
 }
 
 const CREDIT_ICONS = { "Sit Down":"🍽", "Quick Service":"🥡", "Snack":"🍿", "Mug":"☕" };
@@ -581,7 +581,7 @@ function DiningCredits({ isoDate }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pageId, used: !currentlyUsed, dateUsed: newDateUsed }),
       });
-    } catch (_err) {
+    } catch (e) {
       // Revert on failure
       setCredits(prev => prev.map(c => c.pageId === pageId ? { ...c, dateUsed: currentlyUsed ? today : null } : c));
     }
@@ -761,11 +761,11 @@ function ViewToggle({ view, setView }) {
 // ── Main Itinerary export ──────────────────────────────────────────────────────
 export function Itinerary({ view, setView, prefs, syncing, loading, syncError, onPref, onNotes, onClosed, onRdNom, onRdConfirm, onLLStatus }) {
   const [activeDay, setActiveDayRaw] = useState(() => {
-    try { const s = localStorage.getItem("dw2026-activeDay"); return s !== null ? parseInt(s) : 0; } catch (_err) { return 0; }
+    try { const s = localStorage.getItem("dw2026-activeDay"); return s !== null ? parseInt(s) : 0; } catch (e) { return 0; }
   });
   const setActiveDay = (i) => {
     setActiveDayRaw(i);
-    try { localStorage.setItem("dw2026-activeDay", String(i)); } catch (_err) {}
+    try { localStorage.setItem("dw2026-activeDay", String(i)); } catch (e) {}
   };
   const day = days[activeDay];
   const [rooms, setRooms] = useState({});
@@ -803,7 +803,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   }, [activeDay, weatherLocs.length]);
 
   useEffect(() => {
-    try { const r = localStorage.getItem("dw2026-rooms"); if (r) setRooms(JSON.parse(r)); } catch (_err) {}
+    try { const r = localStorage.getItem("dw2026-rooms"); if (r) setRooms(JSON.parse(r)); } catch (e) {}
   }, []);
 
   useEffect(() => {
@@ -818,7 +818,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
         body: JSON.stringify({ pageId, visibility }),
       });
       fetchBookedLLs().then(setBookedLLs).catch(() => {});
-    } catch (_err) {}
+    } catch (e) {}
   };
 
   // Merge highlights with booked LLs for the current day, sorted by time
@@ -971,7 +971,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                         {day.rooms.map((r,ri) => (
                           <div key={ri} style={{ display:"flex", alignItems:"center", gap:4 }}>
                             <span style={{ fontSize:9, color:"rgba(255,255,255,0.45)", fontFamily:"'DM Sans',sans-serif", letterSpacing:"0.08em" }}>{r.label}</span>
-                            <input value={rooms[`${activeDay}-${ri}`]||""} onChange={e => { const key=`${activeDay}-${ri}`; setRooms(prev => { const next={...prev,[key]:e.target.value}; try{localStorage.setItem("dw2026-rooms",JSON.stringify(next));}catch (_err){} return next; }); }} placeholder="Room #" onClick={e=>e.stopPropagation()} style={{ fontSize:10, width:58, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:4, padding:"2px 5px", color:"#FFF", fontFamily:"'DM Sans',sans-serif", outline:"none" }} />
+                            <input value={rooms[`${activeDay}-${ri}`]||""} onChange={e => { const key=`${activeDay}-${ri}`; setRooms(prev => { const next={...prev,[key]:e.target.value}; try{localStorage.setItem("dw2026-rooms",JSON.stringify(next));}catch (e){} return next; }); }} placeholder="Room #" onClick={e=>e.stopPropagation()} style={{ fontSize:10, width:58, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:4, padding:"2px 5px", color:"#FFF", fontFamily:"'DM Sans',sans-serif", outline:"none" }} />
                           </div>
                         ))}
                       </div>
