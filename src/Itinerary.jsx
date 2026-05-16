@@ -980,7 +980,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                   <div style={{ flexShrink:0, textAlign:"right", cursor: weatherLocs.length > 1 ? "pointer" : "default" }} onClick={() => weatherLocs.length > 1 && setLocIdx(i => (i + 1) % weatherLocs.length)}>
                     {weatherLocs.length > 1 && (
                       <div style={{ display:"flex", justifyContent:"flex-end", gap:4, marginBottom:4 }}>
-                        {weatherLocs.map((_, i) => (
+                        {weatherLocs.map((_loc, i) => (
                           <div key={i} style={{ width:5, height:5, borderRadius:"50%", background: i === locIdx % weatherLocs.length ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)" }} />
                         ))}
                       </div>
