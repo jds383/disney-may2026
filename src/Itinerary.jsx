@@ -307,7 +307,33 @@ async function fetchCalendar() {
   } catch (e) { return {}; }
 }
 
-function Countdown() {
+async function fetchCalendarDays() {
+  try {
+    const res = await fetch(`${WORKER_URL}/calendar`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!data.results) return [];
+    return data.results
+      .map(page => {
+        const props = page.properties;
+        return {
+          date:      props["Date"]?.date?.start ?? null,
+          name:      props["Name"]?.title?.[0]?.text?.content ?? "",
+          dayType:   props["Day Type"]?.select?.name ?? null,
+          parkId:    props["Park ID"]?.select?.name ?? null,
+          latStart:  props["Lat Start"]?.number ?? null,
+          lonStart:  props["Lon Start"]?.number ?? null,
+          latEnd:    props["Lat End"]?.number ?? null,
+          lonEnd:    props["Lon End"]?.number ?? null,
+          locStart:  props["Location Start"]?.rich_text?.[0]?.text?.content ?? null,
+          locEnd:    props["Location End"]?.rich_text?.[0]?.text?.content ?? null,
+        };
+      })
+      .filter(d => d.date);
+  } catch (e) { return []; }
+}
+
+function Countdown({ onTripleTap, testMode }) {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dep = new Date(2026, 4, 21);
@@ -316,9 +342,16 @@ function Countdown() {
   if (today < dep) { mode = "pre"; value = Math.round((dep - today) / 86400000); sublabel = value === 1 ? "DAY TO GO" : "DAYS TO GO"; }
   else if (today <= ret) { mode = "trip"; value = Math.round((today - dep) / 86400000) + 1; sublabel = "OF 7"; }
   else { mode = "done"; }
+  const tapRef = useRef({count:0, timer:null});
+  const handleTap = () => {
+    tapRef.current.count++;
+    clearTimeout(tapRef.current.timer);
+    tapRef.current.timer = setTimeout(() => { tapRef.current.count = 0; }, 600);
+    if (tapRef.current.count >= 3) { tapRef.current.count = 0; onTripleTap && onTripleTap(); }
+  };
   if (mode === "done") return <div style={{ textAlign: "center", padding: "12px 0 20px" }}><div style={{ fontSize: 20, color: "#C8A96E", fontFamily: "'DM Sans', sans-serif", fontStyle: "italic" }}>See ya real soon! 👋🏰</div></div>;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "4px 0 20px" }}>
+    <div onClick={handleTap} style={{ display: "flex", alignItems: "center", gap: 16, padding: "4px 0 20px", cursor:"default", userSelect:"none" }}>
       <div style={{ position: "relative", width: 82, height: 88, flexShrink: 0, background: "#F0EDE8", borderRadius: 10, boxShadow: "0 6px 18px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.9)", border: "1px solid #D5CFC7", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: "50%", left: -5, transform: "translateY(-50%)", width: 10, height: 10, borderRadius: "50%", background: "#C0BAB2", zIndex: 3 }} />
         <div style={{ position: "absolute", top: "50%", right: -5, transform: "translateY(-50%)", width: 10, height: 10, borderRadius: "50%", background: "#C0BAB2", zIndex: 3 }} />
@@ -327,7 +360,10 @@ function Countdown() {
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "rgba(255,255,255,0.12)", borderRadius: "10px 10px 0 0", zIndex: 1, pointerEvents: "none" }} />
       </div>
       <div>
-        <div style={{ fontSize: 16, letterSpacing: "0.12em", color: "#1C2B4A", fontFamily: "'DM Sans', sans-serif", fontWeight: "bold" }}>{sublabel}</div>
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <div style={{ fontSize: 16, letterSpacing: "0.12em", color: "#1C2B4A", fontFamily: "'DM Sans', sans-serif", fontWeight: "bold" }}>{sublabel}</div>
+          {testMode && <span style={{ fontSize:10, opacity:0.4 }}>🧪</span>}
+        </div>
         {mode === "trip" && <div style={{ fontSize: 11, color: "#C8A96E", fontFamily: "'DM Sans', sans-serif", fontStyle: "italic", marginTop: 4 }}>See ya real soon! 🎉</div>}
       </div>
     </div>
@@ -771,14 +807,34 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
     setActiveDayRaw(i);
     try { localStorage.setItem("dw2026-activeDay", String(i)); } catch (e) {}
   };
-  const day = days[activeDay];
+  const day = activeTestDay
+    ? { ...days[0], isoDate: activeTestDay.date, label: activeTestDay.name, weatherDate: activeTestDay.date, weatherLat: activeTestDay.latStart, weatherLon: activeTestDay.lonStart, color: "#555", emoji: "🧪", hotel: "Test Day", rooms: [], parkId: activeTestDay.parkId, highlights: [] }
+    : days[activeDay];
   const [rooms, setRooms] = useState({});
   const [bookedLLs, setBookedLLs] = useState([]);
   const [calendarData, setCalendarData] = useState({});
+  const [testMode, setTestMode] = useState(() => {
+    try { return localStorage.getItem("dw2026-testMode") === "1"; } catch (e) { return false; }
+  });
+  const [calendarDays, setCalendarDays] = useState([]);
 
   useEffect(() => {
     fetchCalendar().then(setCalendarData).catch(() => {});
+    fetchCalendarDays().then(setCalendarDays).catch(() => {});
   }, []);
+
+  const toggleTestMode = () => {
+    const next = !testMode;
+    setTestMode(next);
+    try { localStorage.setItem("dw2026-testMode", next ? "1" : "0"); } catch (e) {}
+  };
+
+  // Test days from Notion calendar
+  const testDays = calendarDays.filter(d => d.dayType === "Test");
+  const [activeTestDay, setActiveTestDay] = useState(null);
+
+  // When switching regular days, clear test day
+  const wrappedSetActiveDay = (i) => { setActiveTestDay(null); setActiveDay(i); };
 
   // Weather carousel — driven by Trip Calendar Notion data
   const cal = calendarData[day.isoDate];
@@ -900,7 +956,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 24, fontWeight: "normal", margin: "0 0 6px 0", letterSpacing: "-0.02em", color: "#1A1A1A", textAlign: "left", fontFamily: "'DM Sans', sans-serif" }}>Disney World May 2026</h1>
         </div>
-        <Countdown />
+        <Countdown onTripleTap={toggleTestMode} testMode={testMode} />
 
         {/* Permanent view toggle — always visible */}
         <ViewToggle view={view} setView={setView} />
@@ -926,7 +982,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: "rgba(255,255,255,0.9)" }} />
                 </div>
               ) : (
-                <button key={i} onClick={() => setActiveDay(i)} style={{ flexShrink: 0, padding: "6px 10px", borderRadius: 20, border: "none", background: "#EDE8E1", color: "#888", fontSize: 11, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}>
+                <button key={i} onClick={() => wrappedSetActiveDay(i)} style={{ flexShrink: 0, padding: "6px 10px", borderRadius: 20, border: "none", background: "#EDE8E1", color: "#888", fontSize: 11, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}>
                   {num}{s}
                 </button>
               );
