@@ -817,9 +817,13 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   const [activeTestDay, setActiveTestDay] = useState(null);
 
   // day must be computed after activeTestDay is declared
-  const day = activeTestDay
-    ? { ...days[0], isoDate: activeTestDay.date, label: activeTestDay.name, weatherDate: activeTestDay.date, weatherLat: activeTestDay.latStart, weatherLon: activeTestDay.lonStart, color: "#555", emoji: "🧪", hotel: "Test Day", rooms: [], parkId: activeTestDay.parkId, highlights: [] }
-    : days[activeDay];
+  const day = activeTestDay ? (() => {
+    const d = new Date(activeTestDay.date + "T12:00:00");
+    const dow = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
+    const mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
+    const num = d.getDate();
+    return { ...days[0], date: `${dow} ${mon} ${num}`, isoDate: activeTestDay.date, label: activeTestDay.name, weatherDate: activeTestDay.date, weatherLat: activeTestDay.latStart, weatherLon: activeTestDay.lonStart, color: "#555", emoji: "🧪", hotel: "Test Day", rooms: [], parkId: activeTestDay.parkId, highlights: [] };
+  })() : days[activeDay];
 
   useEffect(() => {
     fetchCalendar().then(setCalendarData).catch(() => {});
