@@ -496,7 +496,7 @@ function LLRow({ h, color, borderBottom, onSkip }) {
     <div style={{ borderBottom, background: style.bg }}>
       <div
         onClick={() => collapsibleText && setOpen(o => !o)}
-        style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 22px", cursor: collapsibleText ? "pointer" : "default" }}
+        style={{ display:"flex", alignItems:"center", gap:8, padding:`6px 22px 6px ${h.optional ? "34px" : "22px"}`, cursor: collapsibleText ? "pointer" : "default" }}
       >
         <span style={{ fontSize:14, flexShrink:0 }}>{h.icon}</span>
         <div style={{ flex:1 }}>
@@ -508,15 +508,15 @@ function LLRow({ h, color, borderBottom, onSkip }) {
             <span style={{ fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", display:"block", marginTop:1, textAlign:"left" }}>{locationStr}</span>
           )}
         </div>
-        {collapsibleText && (
-          <span style={{ fontSize:11, color:"#CCC", flexShrink:0, transition:"transform 0.2s", display:"inline-block", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
-        )}
         {h.optional && onSkip && (
           <button onClick={e => { e.stopPropagation(); onSkip(h.pageId); }} style={{ fontSize:10, color:"#AAA", background:"none", border:"1px solid #EDE8E1", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Skip</button>
         )}
+        {collapsibleText && (
+          <span style={{ fontSize:11, color:"#CCC", flexShrink:0, transition:"transform 0.2s", display:"inline-block", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+        )}
       </div>
       {open && collapsibleText && (
-        <div style={{ padding:"0 22px 8px 44px", fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", lineHeight:1.5 }}>
+        <div style={{ padding:`0 22px 8px ${h.optional ? "56px" : "44px"}`, fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", lineHeight:1.5 }}>
           {collapsibleText}
         </div>
       )}
