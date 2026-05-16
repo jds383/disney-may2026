@@ -989,6 +989,13 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                 </button>
               );
             })}
+            {testMode && testDays.map((td, i) => (
+              <button
+                key={`test-${i}`}
+                onClick={() => setActiveTestDay(td)}
+                style={{ flexShrink: 0, padding: "6px 10px", borderRadius: 20, border: `1px dashed ${activeTestDay?.date === td.date ? "#555" : "#CCC"}`, background: activeTestDay?.date === td.date ? "#EEE" : "transparent", color: "#888", fontSize: 11, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}
+              >🧪</button>
+            ))}
           </div>
 
           {/* Prev / Next grouped on the right */}
