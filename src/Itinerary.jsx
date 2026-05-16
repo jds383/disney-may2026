@@ -39,7 +39,7 @@ function FlightStatus({ flightNumber, flightDate, schedDep, schedArr, color }) {
     const today = new Date().toISOString().split("T")[0];
     if (today !== flightDate) { setSpinning(false); return; }
     try {
-      const res = await fetch(`https://api.aviationstack.com/v1/flights?access_key=67e59f674eef0dc0ceefbdbd984e9f19&flight_iata=${flightNumber}&flight_date=${flightDate}`);
+      const res = await fetch(`${WORKER_URL}/flight?iata=${flightNumber}&date=${flightDate}`);
       const data = await res.json();
       const parsed = parseFlight(data);
       if (parsed) setLive(parsed);
@@ -444,7 +444,7 @@ function LLRow({ h, color, borderBottom, onSkip }) {
     : RIDES.find(r => r.id === h.rideId)?.url);
   // subtext from Notion is collapsible; location/resort shown inline
   const collapsibleText = h.subtext || null;
-  const locationStr = !h.subtext && (h.resort
+  const locationStr = !h.subtext && !isFlight && (h.resort
     ? (h.location ? `${h.resort} · ${h.location}` : h.resort)
     : (h.location || null));
   const timeStr = (h.startTime && h.startTime !== "TBD") ? h.startTime + (h.endTime ? ` – ${h.endTime}` : "") : "";
