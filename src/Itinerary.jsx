@@ -497,9 +497,9 @@ function LLRow({ h, color, borderBottom, onSkip, testDate }) {
     : RIDES.find(r => r.id === h.rideId)?.url);
   // subtext from Notion is collapsible; location/resort shown inline
   const isFlight = h.type === "Flight";
-  const locationPart = !isFlight && (h.resort
-    ? (h.location ? `${h.resort} · ${h.location}` : h.resort)
-    : (h.location || null));
+  const locationPart = !isFlight && (h.location
+    ? h.location
+    : (h.resort || null));
   const collapsibleText = locationPart && h.subtext
     ? `${locationPart} · ${h.subtext}`
     : (h.subtext || locationPart || null);
