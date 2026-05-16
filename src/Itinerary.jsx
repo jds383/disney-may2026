@@ -24,6 +24,7 @@ const parseFlight = (data) => {
       terminal_arr: f.arrival?.terminal || "—",
       actual_dep: fmt(f.departure?.actual || f.departure?.estimated),
       actual_arr: fmt(f.arrival?.actual || f.arrival?.estimated),
+      baggage: f.arrival?.baggage || "—",
       live: true,
     };
   } catch (e) { return null; }
@@ -49,15 +50,20 @@ function FlightStatus({ flightNumber, flightDate, schedDep, schedArr, color }) {
 
   useEffect(() => { fetchData(); }, [flightNumber, flightDate]);
 
-  const d = live || { status: "Scheduled", gate_dep: "—", gate_arr: "—", terminal_dep: "—", terminal_arr: "—", actual_dep: schedDep || "—", actual_arr: schedArr || "—", live: false };
+  const d = live || { status: "Scheduled", gate_dep: "—", gate_arr: "—", terminal_dep: "—", terminal_arr: "—", actual_dep: schedDep || "—", actual_arr: schedArr || "—", baggage: "—", live: false };
   const statusColor = STATUS_COLORS[d.status] || "#888";
-  const depPart = `Dep ${d.actual_dep}${d.terminal_dep !== "—" ? ` T${d.terminal_dep}` : ""}${d.gate_dep !== "—" ? ` G${d.gate_dep}` : ""}`;
-  const arrPart = `Arr ${d.actual_arr}${d.terminal_arr !== "—" ? ` T${d.terminal_arr}` : ""}${d.gate_arr !== "—" ? ` G${d.gate_arr}` : ""}`;
+
+  // Build parts — only include terminal/gate/baggage if we have real data
+  const parts = [flightNumber, d.status];
+  const depStr = `Dep ${d.actual_dep}${d.terminal_dep !== "—" ? ` T${d.terminal_dep}` : ""}${d.gate_dep !== "—" ? ` G${d.gate_dep}` : ""}`;
+  const arrStr = `Arr ${d.actual_arr}${d.terminal_arr !== "—" ? ` T${d.terminal_arr}` : ""}${d.gate_arr !== "—" ? ` G${d.gate_arr}` : ""}`;
+  parts.push(depStr, arrStr);
+  if (d.baggage && d.baggage !== "—") parts.push(`Bag ${d.baggage}`);
+  const line = parts.join(" · ");
 
   return (
     <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 22px 6px 50px" }}>
-      <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:8, background:statusColor+"22", color:statusColor, border:`1px solid ${statusColor}44`, whiteSpace:"nowrap", fontFamily:"'DM Sans',sans-serif" }}>{d.status}</span>
-      <span style={{ fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", flex:1 }}>{flightNumber} · {depPart} · {arrPart}</span>
+      <span style={{ fontSize:11, color: d.status === "Delayed" || d.status === "Cancelled" ? statusColor : "#888", fontFamily:"'DM Sans',sans-serif", flex:1, fontWeight: d.status === "Delayed" || d.status === "Cancelled" ? 600 : 400 }}>{line}</span>
       <button onClick={e => { e.stopPropagation(); fetchData(); }} style={{ fontSize:12, background:"none", border:"none", cursor:"pointer", color:"#CCC", padding:0, lineHeight:1, display:"inline-flex", alignItems:"center", transform:spinning?"rotate(180deg)":"none", transition:"transform 0.4s ease", flexShrink:0 }}>↻</button>
     </div>
   );
