@@ -64,8 +64,7 @@ function FlightStatus({ flightNumber, flightDate, schedDep, schedArr, color }) {
     <div style={{ margin: "0", borderTop: "1px solid rgba(0,0,0,0.06)", background: "#FAFAF8" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 22px 6px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: "bold", color: "#1A1A1A", fontFamily: "'DM Sans', sans-serif" }}>{flightNumber}</span>
-          <span style={{ fontSize: 11, color: "#888" }}>{info.from} → {info.to}</span>
+          <span style={{ fontSize: 11, color: "#888" }}>{flightNumber}</span>
           <span style={{ fontSize: 10, background: statusColor + "22", color: statusColor, border: `1px solid ${statusColor}44`, borderRadius: 20, padding: "1px 8px", fontFamily: "'DM Sans', sans-serif" }}>{d.status}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
