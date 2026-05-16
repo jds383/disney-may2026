@@ -807,9 +807,6 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
     setActiveDayRaw(i);
     try { localStorage.setItem("dw2026-activeDay", String(i)); } catch (e) {}
   };
-  const day = activeTestDay
-    ? { ...days[0], isoDate: activeTestDay.date, label: activeTestDay.name, weatherDate: activeTestDay.date, weatherLat: activeTestDay.latStart, weatherLon: activeTestDay.lonStart, color: "#555", emoji: "🧪", hotel: "Test Day", rooms: [], parkId: activeTestDay.parkId, highlights: [] }
-    : days[activeDay];
   const [rooms, setRooms] = useState({});
   const [bookedLLs, setBookedLLs] = useState([]);
   const [calendarData, setCalendarData] = useState({});
@@ -817,6 +814,12 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
     try { return localStorage.getItem("dw2026-testMode") === "1"; } catch (e) { return false; }
   });
   const [calendarDays, setCalendarDays] = useState([]);
+  const [activeTestDay, setActiveTestDay] = useState(null);
+
+  // day must be computed after activeTestDay is declared
+  const day = activeTestDay
+    ? { ...days[0], isoDate: activeTestDay.date, label: activeTestDay.name, weatherDate: activeTestDay.date, weatherLat: activeTestDay.latStart, weatherLon: activeTestDay.lonStart, color: "#555", emoji: "🧪", hotel: "Test Day", rooms: [], parkId: activeTestDay.parkId, highlights: [] }
+    : days[activeDay];
 
   useEffect(() => {
     fetchCalendar().then(setCalendarData).catch(() => {});
@@ -831,7 +834,6 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
 
   // Test days from Notion calendar
   const testDays = calendarDays.filter(d => d.dayType === "Test");
-  const [activeTestDay, setActiveTestDay] = useState(null);
 
   // When switching regular days, clear test day
   const wrappedSetActiveDay = (i) => { setActiveTestDay(null); setActiveDay(i); };
