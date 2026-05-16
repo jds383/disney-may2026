@@ -214,7 +214,6 @@ const days = [
   {
     date: "Fri May 22", label: "Amenities Day", hotel: "Villas at Grand Floridian → Polynesian Villas & Bungalows",
     weatherDate: "2026-05-22", weatherLat: 28.4094, weatherLon: -81.5840, isoDate: "2026-05-22",
-    weatherLocations: [{label:"Grand Floridian", lat:28.4094, lon:-81.5840}, {label:"Polynesian", lat:28.4177, lon:-81.5812}],
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#7B4F2E", emoji: "🌴",
     parkId: null,
     highlights: []
@@ -229,7 +228,6 @@ const days = [
   {
     date: "Sun May 24", label: "Amenities Day", hotel: "Polynesian Villas & Bungalows → Riviera Resort",
     weatherDate: "2026-05-24", weatherLat: 28.3613, weatherLon: -81.5588, isoDate: "2026-05-24",
-    weatherLocations: [{label:"Polynesian", lat:28.4177, lon:-81.5812}, {label:"Riviera", lat:28.3613, lon:-81.5588}],
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#7B4F2E", emoji: "🌴",
     parkId: null,
     highlights: []
@@ -320,6 +318,30 @@ async function fetchBookedLLs() {
         };
       });
   } catch (_) { return []; }
+}
+
+async function fetchCalendar() {
+  try {
+    const res = await fetch(`${WORKER_URL}/calendar`);
+    if (!res.ok) return {};
+    const data = await res.json();
+    if (!data.results) return {};
+    const map = {};
+    data.results.forEach(page => {
+      const props = page.properties;
+      const date = props["Date"]?.date?.start;
+      if (!date) return;
+      map[date] = {
+        latStart: props["Lat Start"]?.number ?? null,
+        lonStart: props["Lon Start"]?.number ?? null,
+        latEnd:   props["Lat End"]?.number ?? null,
+        lonEnd:   props["Lon End"]?.number ?? null,
+        locationStart: props["Location Start"]?.rich_text?.[0]?.text?.content ?? null,
+        locationEnd:   props["Location End"]?.rich_text?.[0]?.text?.content ?? null,
+      };
+    });
+    return map;
+  } catch (_) { return {}; }
 }
 
 function Countdown() {
@@ -775,9 +797,24 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   const day = days[activeDay];
   const [rooms, setRooms] = useState({});
   const [bookedLLs, setBookedLLs] = useState([]);
+  const [calendarData, setCalendarData] = useState({});
 
-  // Weather carousel — cycles through locations for transition days
-  const weatherLocs = day.weatherLocations || [{lat: day.weatherLat, lon: day.weatherLon, label: null}];
+  useEffect(() => {
+    fetchCalendar().then(setCalendarData).catch(() => {});
+  }, []);
+
+  // Weather carousel — driven by Trip Calendar Notion data
+  const cal = calendarData[day.isoDate];
+  const weatherLocs = (() => {
+    if (!cal) return [{lat: day.weatherLat, lon: day.weatherLon, label: null}];
+    const start = {lat: cal.latStart, lon: cal.lonStart, label: cal.locationStart};
+    const end   = {lat: cal.latEnd,   lon: cal.lonEnd,   label: cal.locationEnd};
+    // Only show carousel if start and end are different locations
+    if (!end.lat || (Math.abs(start.lat - end.lat) < 0.001 && Math.abs(start.lon - end.lon) < 0.001)) {
+      return [start];
+    }
+    return [start, end];
+  })();
   const [locIdx, setLocIdx] = useState(0);
   const activeLoc = weatherLocs[locIdx % weatherLocs.length];
   const { weather, error: weatherError } = useWeather(day.weatherDate, activeLoc.lat, activeLoc.lon);
