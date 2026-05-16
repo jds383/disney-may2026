@@ -53,17 +53,15 @@ function FlightStatus({ flightNumber, flightDate, schedDep, schedArr, color }) {
   const d = live || { status: "Scheduled", gate_dep: "—", gate_arr: "—", terminal_dep: "—", terminal_arr: "—", actual_dep: schedDep || "—", actual_arr: schedArr || "—", baggage: "—", live: false };
   const statusColor = STATUS_COLORS[d.status] || "#888";
 
-  // Build parts — only include terminal/gate/baggage if we have real data
-  const parts = [flightNumber, d.status];
-  const depStr = `Dep ${d.actual_dep}${d.terminal_dep !== "—" ? ` T${d.terminal_dep}` : ""}${d.gate_dep !== "—" ? ` G${d.gate_dep}` : ""}`;
-  const arrStr = `Arr ${d.actual_arr}${d.terminal_arr !== "—" ? ` T${d.terminal_arr}` : ""}${d.gate_arr !== "—" ? ` G${d.gate_arr}` : ""}`;
-  parts.push(depStr, arrStr);
-  if (d.baggage && d.baggage !== "—") parts.push(`Bag ${d.baggage}`);
-  const line = parts.join(" · ");
+  // Always show all fields, use — when data not available
+  const depStr = `Dep ${d.actual_dep} T${d.terminal_dep} G${d.gate_dep}`;
+  const arrStr = `Arr ${d.actual_arr} T${d.terminal_arr} G${d.gate_arr}`;
+  const bagStr = `Bag ${d.baggage}`;
+  const line = `${flightNumber} · ${d.status} · ${depStr} · ${arrStr} · ${bagStr}`;
 
   return (
     <div style={{ display:"flex", alignItems:"center", gap:6, padding:"0 22px 6px 50px" }}>
-      <span style={{ fontSize:11, color: d.status === "Delayed" || d.status === "Cancelled" ? statusColor : "#888", fontFamily:"'DM Sans',sans-serif", flex:1, fontWeight: d.status === "Delayed" || d.status === "Cancelled" ? 600 : 400 }}>{line}</span>
+      <span style={{ fontSize:11, color: d.status === "Delayed" || d.status === "Cancelled" ? statusColor : "#888", fontFamily:"'DM Sans',sans-serif", flex:1, textAlign:"left", fontWeight: d.status === "Delayed" || d.status === "Cancelled" ? 600 : 400 }}>{line}</span>
       <button onClick={e => { e.stopPropagation(); fetchData(); }} style={{ fontSize:12, background:"none", border:"none", cursor:"pointer", color:"#CCC", padding:0, lineHeight:1, display:"inline-flex", alignItems:"center", transform:spinning?"rotate(180deg)":"none", transition:"transform 0.4s ease", flexShrink:0 }}>↻</button>
     </div>
   );
