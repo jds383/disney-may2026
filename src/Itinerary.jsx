@@ -1,10 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ParkRides, Summary, RIDES, saveMetaToNotion, isClosed } from "./LLPlanner";
 
-const FLIGHTS = {
-  "2026-05-21": { flight: "AA2531", date: "2026-05-21", from: "PHL", to: "MCO", sched_dep: "5:50 PM", sched_arr: "8:46 PM" },
-  "2026-05-27": { flight: "AA810",  date: "2026-05-27", from: "MCO", to: "PHL", sched_dep: "3:51 PM", sched_arr: "6:35 PM" },
-};
 
 const STATUS_COLORS = {
   "Scheduled": "#2C5F8A", "On Time": "#1A6B4A", "Delayed": "#C8832A",
@@ -33,24 +29,23 @@ const parseFlight = (data) => {
   } catch (_) { return null; }
 };
 
-function FlightStatus({ weatherDate, color }) {
-  const info = FLIGHTS[weatherDate];
+function FlightStatus({ flightNumber, flightDate, schedDep, schedArr, color }) {
   const [live, setLive] = useState(null);
   const [spinning, setSpinning] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const fetchData = async () => {
-    if (!info) return;
+    if (!flightNumber || !flightDate) return;
     setSpinning(true);
     const today = new Date().toISOString().split("T")[0];
-    if (today !== info.date) {
+    if (today !== flightDate) {
       await new Promise(r => setTimeout(r, 600));
       setLastUpdated(`as of: ${new Date().toLocaleDateString("en-US", { month: "numeric", day: "2-digit" })} ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} · no live data yet`);
       setSpinning(false);
       return;
     }
     try {
-      const res = await fetch(`https://api.aviationstack.com/v1/flights?access_key=DEMO&flight_iata=${info.flight}&flight_date=${info.date}`);
+      const res = await fetch(`https://api.aviationstack.com/v1/flights?access_key=67e59f674eef0dc0ceefbdbd984e9f19&flight_iata=${flightNumber}&flight_date=${flightDate}`);
       const data = await res.json();
       const parsed = parseFlight(data);
       if (parsed) setLive(parsed);
@@ -59,11 +54,9 @@ function FlightStatus({ weatherDate, color }) {
     setSpinning(false);
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [flightNumber, flightDate]);
 
-  if (!info) return null;
-
-  const d = live || { status: "Scheduled", gate_dep: "—", gate_arr: "—", terminal_dep: "—", terminal_arr: "—", actual_dep: info.sched_dep, actual_arr: info.sched_arr, live: false };
+  const d = live || { status: "Scheduled", gate_dep: "—", gate_arr: "—", terminal_dep: "—", terminal_arr: "—", actual_dep: schedDep || "—", actual_arr: schedArr || "—", live: false };
   const statusColor = STATUS_COLORS[d.status] || "#888";
   const isLive = d.live;
 
@@ -71,7 +64,7 @@ function FlightStatus({ weatherDate, color }) {
     <div style={{ margin: "0", borderTop: "1px solid rgba(0,0,0,0.06)", background: "#FAFAF8" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 22px 6px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: "bold", color: "#1A1A1A", fontFamily: "'DM Sans', sans-serif" }}>{info.flight}</span>
+          <span style={{ fontSize: 13, fontWeight: "bold", color: "#1A1A1A", fontFamily: "'DM Sans', sans-serif" }}>{flightNumber}</span>
           <span style={{ fontSize: 11, color: "#888" }}>{info.from} → {info.to}</span>
           <span style={{ fontSize: 10, background: statusColor + "22", color: statusColor, border: `1px solid ${statusColor}44`, borderRadius: 20, padding: "1px 8px", fontFamily: "'DM Sans', sans-serif" }}>{d.status}</span>
         </div>
@@ -85,7 +78,7 @@ function FlightStatus({ weatherDate, color }) {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "0 22px 12px", gap: "4px 0" }}>
         {[
-          { label: "Sched Dep", val: info.sched_dep }, { label: "Sched Arr", val: info.sched_arr },
+          { label: "Sched Dep", val: schedDep || "—" }, { label: "Sched Arr", val: schedArr || "—" },
           { label: "Actual Dep", val: d.actual_dep },  { label: "Actual Arr", val: d.actual_arr },
           { label: "Terminal (Dep)", val: d.terminal_dep }, { label: "Terminal (Arr)", val: d.terminal_arr },
           { label: "Gate (Dep)", val: d.gate_dep },    { label: "Gate (Arr)", val: d.gate_arr },
@@ -207,9 +200,7 @@ const days = [
     weatherDate: "2026-05-21", weatherLat: 28.4104, weatherLon: -81.5868, isoDate: "2026-05-21",
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#2C5F8A", emoji: "✈️",
     parkId: null,
-    highlights: [
-      { sortTime: 1750, icon: "✈️", text: "Depart PHL 5:50 PM · Arrive MCO 8:46 PM", flight: true, url: "https://www.flightaware.com/live/flight/AAL2531" },
-    ]
+    highlights: []
   },
   {
     date: "Fri May 22", label: "Amenities Day", hotel: "Villas at Grand Floridian → Polynesian Villas & Bungalows",
@@ -251,9 +242,7 @@ const days = [
     weatherDate: "2026-05-27", weatherLat: 28.3613, weatherLon: -81.5588, isoDate: "2026-05-27",
     rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#2C5F8A", emoji: "🏠",
     parkId: null,
-    highlights: [
-      { sortTime: 1551, icon: "✈️", text: "Depart MCO 3:51 PM · Arrive PHL 6:35 PM", flight: true, url: "https://www.flightaware.com/live/flight/AAL810" },
-    ]
+    highlights: []
   }
 ];
 
@@ -491,12 +480,15 @@ function LLRow({ h, color, borderBottom, onSkip }) {
   const timeStr = (h.startTime && h.startTime !== "TBD") ? h.startTime + (h.endTime ? ` – ${h.endTime}` : "") : "";
   const partyStr = h.party && h.party !== "All" ? ` · ${h.party}` : "";
   const nameStr = h.rideName;
-  const fullText = [timeStr, nameStr + partyStr].filter(Boolean).join(" · ") + (rideUrl ? " ↗" : "");
+  const isFlight = h.type === "Flight";
+  const fullText = isFlight
+    ? [h.startTime, nameStr, h.endTime].filter(Boolean).join(" · ") + (rideUrl ? " ↗" : "")
+    : [timeStr, nameStr + partyStr].filter(Boolean).join(" · ") + (rideUrl ? " ↗" : "");
   return (
     <div style={{ borderBottom, background: style.bg }}>
       <div
-        onClick={() => collapsibleText && setOpen(o => !o)}
-        style={{ display:"flex", alignItems:"center", gap:8, padding:`6px 22px 6px ${h.optional ? "34px" : "22px"}`, cursor: collapsibleText ? "pointer" : "default" }}
+        onClick={() => !isFlight && collapsibleText && setOpen(o => !o)}
+        style={{ display:"flex", alignItems:"center", gap:8, padding:`6px 22px 6px ${h.optional ? "34px" : "22px"}`, cursor: (!isFlight && collapsibleText) ? "pointer" : "default" }}
       >
         <span style={{ fontSize:14, flexShrink:0 }}>{h.icon}</span>
         <div style={{ flex:1 }}>
@@ -511,11 +503,20 @@ function LLRow({ h, color, borderBottom, onSkip }) {
         {h.optional && onSkip && (
           <button onClick={e => { e.stopPropagation(); onSkip(h.pageId); }} style={{ fontSize:10, color:"#AAA", background:"none", border:"1px solid #EDE8E1", borderRadius:12, padding:"2px 8px", cursor:"pointer", flexShrink:0, fontFamily:"'DM Sans',sans-serif" }}>Skip</button>
         )}
-        {collapsibleText && (
+        {!isFlight && collapsibleText && (
           <span style={{ fontSize:11, color:"#CCC", flexShrink:0, transition:"transform 0.2s", display:"inline-block", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
         )}
       </div>
-      {open && collapsibleText && (
+      {isFlight && (
+        <FlightStatus
+          flightNumber={h.location}
+          flightDate={h.date}
+          schedDep={h.startTime}
+          schedArr={h.endTime}
+          color={color}
+        />
+      )}
+      {!isFlight && open && collapsibleText && (
         <div style={{ padding:`0 22px 8px ${h.optional ? "56px" : "44px"}`, fontSize:11, color:"#888", fontFamily:"'DM Sans',sans-serif", lineHeight:1.5 }}>
           {collapsibleText}
         </div>
@@ -1057,7 +1058,6 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                       <>
                         <HighlightRow h={h} color={day.color} borderBottom={!h.flight&&!h.quickService&&hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none"} />
                         {h.quickService && <QuickServiceDining color={day.color} />}
-                        {h.flight && FLIGHTS[day.weatherDate] && <div style={{ borderBottom:hi<mergedHighlights.length-1?"1px solid #F5F0EA":"none" }}><FlightStatus weatherDate={day.weatherDate} color={day.color} /></div>}
                       </>
                     )}
                   </div>
