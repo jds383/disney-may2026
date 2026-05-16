@@ -67,9 +67,9 @@ function FlightStatus({ flightNumber, flightDate, schedDep, schedArr, color }) {
   const statusColor = STATUS_COLORS[d.status] || "#888";
 
   // Always show all fields, use — when data not available
-  const depStr = `Dep ${d.actual_dep} T${d.terminal_dep} G${d.gate_dep}`;
-  const arrStr = `Arr ${d.actual_arr} T${d.terminal_arr} G${d.gate_arr}`;
-  const bagStr = `Bag ${d.baggage}`;
+  const depStr = `Dep ${d.actual_dep}${d.terminal_dep !== "—" ? ` T: ${d.terminal_dep}` : " T: —"}${d.gate_dep !== "—" ? ` G: ${d.gate_dep}` : " G: —"}`;
+  const arrStr = `Arr ${d.actual_arr}${d.terminal_arr !== "—" ? ` T: ${d.terminal_arr}` : " T: —"}${d.gate_arr !== "—" ? ` G: ${d.gate_arr}` : " G: —"}`;
+  const bagStr = `Bag: ${d.baggage}`;
   const line = `${flightNumber} · ${d.status} · ${depStr} · ${arrStr} · ${bagStr}`;
 
   return (
