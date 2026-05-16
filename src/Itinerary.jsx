@@ -14,17 +14,23 @@ const fmt = (iso) => {
 
 const parseFlight = (data) => {
   try {
-    const f = data?.data?.[0];
+    // AeroDataBox returns an array directly
+    const f = Array.isArray(data) ? data[0] : data?.data?.[0];
     if (!f) return null;
+    const fmtAero = (dt) => {
+      if (!dt) return "—";
+      const d = new Date(dt);
+      return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+    };
     return {
-      status: f.flight_status ? f.flight_status.charAt(0).toUpperCase() + f.flight_status.slice(1) : "Unknown",
+      status: f.status ? f.status.charAt(0).toUpperCase() + f.status.slice(1).toLowerCase() : "Scheduled",
       gate_dep: f.departure?.gate || "—",
       gate_arr: f.arrival?.gate || "—",
       terminal_dep: f.departure?.terminal || "—",
       terminal_arr: f.arrival?.terminal || "—",
-      actual_dep: fmt(f.departure?.actual || f.departure?.estimated),
-      actual_arr: fmt(f.arrival?.actual || f.arrival?.estimated),
-      baggage: f.arrival?.baggage || "—",
+      actual_dep: fmtAero(f.departure?.actualTime || f.departure?.revisedTime || f.departure?.scheduledTime),
+      actual_arr: fmtAero(f.arrival?.actualTime || f.arrival?.revisedTime || f.arrival?.scheduledTime),
+      baggage: f.arrival?.baggageBelt || "—",
       live: true,
     };
   } catch (e) { return null; }
@@ -468,7 +474,7 @@ const ACTIVITY_STYLES = {
   "Character Meet": { bg: "transparent", badge: "🧸 Meet",   badgeBg: "#EDE9FE", badgeColor: "#4C1D95", badgeBorder: "#C4B5FD" },
   "Resort Activity":{ bg: "transparent", badge: "🏨 Resort", badgeBg: "#DBEAFE", badgeColor: "#1E40AF", badgeBorder: "#93C5FD" },
 };
-function LLRow({ h, color, borderBottom, onSkip }) {
+function LLRow({ h, color, borderBottom, onSkip, testDate }) {
   const [open, setOpen] = useState(false);
   const isMeet = h.type === "Character Meet";
   const isResort = h.type === "Resort Activity";
@@ -520,7 +526,7 @@ function LLRow({ h, color, borderBottom, onSkip }) {
       {isFlight && (
         <FlightStatus
           flightNumber={h.location}
-          flightDate={h.date}
+          flightDate={testDate || h.date}
           schedDep={h.startTime}
           schedArr={h.endTime}
           color={color}
@@ -1081,7 +1087,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
                           <QuickServiceDining color={day.color} />
                         </>
                       ) : (
-                        <LLRow h={h} color={day.color} borderBottom={hi < mergedHighlights.length - 1 ? "1px solid #F5F0EA" : "none"} onSkip={(pageId) => updateVisibility(pageId, "Archive")} />
+                        <LLRow h={h} color={day.color} borderBottom={hi < mergedHighlights.length - 1 ? "1px solid #F5F0EA" : "none"} onSkip={(pageId) => updateVisibility(pageId, "Archive")} testDate={activeTestDay ? activeTestDay.date : null} />
                       )
                     ) : h.alternatives ? (
                       <div style={{ borderTop:"1px solid #F5F0EA" }}>
