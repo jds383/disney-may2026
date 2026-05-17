@@ -269,7 +269,6 @@ function isLLExpired(endTime, isoDate, startTime) {
   }
   return false;
 }
-}
 
 async function fetchBookedLLs() {
   try {
