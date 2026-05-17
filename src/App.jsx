@@ -1,18 +1,5 @@
-import { useState, useEffect, useCallback, Component } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Itinerary } from "./Itinerary";
-
-class ErrorBoundary extends Component {
-  constructor(props) { super(props); this.state = { error: null }; }
-  static getDerivedStateFromError(e) { return { error: e?.message || String(e) }; }
-  render() {
-    if (this.state.error) return (
-      <div style={{ padding: 24, fontFamily: "sans-serif", fontSize: 13, color: "#333" }}>
-        <strong>App error:</strong><br/>{this.state.error}
-      </div>
-    );
-    return this.props.children;
-  }
-}
 
 const WORKER_URL = "https://disney-ll-proxy.45-reactor-puritan.workers.dev";
 
@@ -95,13 +82,7 @@ async function fetchAllVotes() {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [view, setViewRaw] = useState(() => {
-    try { return localStorage.getItem("dw2026-view") || "itinerary"; } catch(_) { return "itinerary"; }
-  });
-  const setView = (v) => {
-    setViewRaw(v);
-    try { localStorage.setItem("dw2026-view", v); } catch(_) {}
-  };
+  const [view,      setView]      = useState("itinerary"); // valid: "preferences" | "llsummary" | "itinerary"
   const [prefs,     setPrefs]     = useState(() => loadStorage());
   const [loading,   setLoading]   = useState(true);
   const [syncing,   setSyncing]   = useState({});
@@ -216,7 +197,6 @@ export default function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#FBF7F2", minHeight: "100vh" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
@@ -341,6 +321,5 @@ export default function App() {
         onLLStatus={handleLLStatus}
       />
     </div>
-    </ErrorBoundary>
   );
 }

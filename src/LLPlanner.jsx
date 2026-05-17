@@ -866,68 +866,11 @@ function selloutMinutes(rideId) {
   return h * 60 + min;
 }
 
-// Get people who rated a ride Must Do or Like To
-function bookers(rideId, prefs) {
-  return PEOPLE
-    .filter((p) => {
-      const pref = prefs?.[rideId]?.prefs?.[p.id];
-      return pref === "must" || pref === "like";
-    })
-    .map((p) => p.id);
-}
-
-function bookersDisplay(rideId, prefs) {
-  const who = bookers(rideId, prefs);
-  if (who.length === PEOPLE.length) return "All";
-  return who.join(" · ");
-}
-
-function SummaryRideItem({ label, isSingle, r, backup, prefs }) {
-  const bg     = isSingle ? "#FFF3E0" : "#E8F5E9";
-  const color  = isSingle ? "#BF360C" : "#0A4A2E";
-  const border = isSingle ? "#FFCC80" : "#A5D6A7";
-  const who    = bookersDisplay(r.id, prefs);
-  const backupWho = backup ? bookersDisplay(backup.id, prefs) : null;
-  return (
-    <div className="summary-item">
-      <div className="summary-item-top">
-        <span className="summary-badge" style={{ background: bg, color, border: `1px solid ${border}` }}>{label}</span>
-        <div className="summary-ride-info">
-          <a href={r.url} target="_blank" rel="noreferrer" className="summary-ride-name">{r.displayName} ↗</a>
-          {who && (
-            <div style={{ fontSize: 10, color: "#888", fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>
-              Book for: <span style={{ fontWeight: 600, color: "#555" }}>{who}</span>
-            </div>
-          )}
-        </div>
-      </div>
-      {backup && (
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 6, paddingLeft: 8, borderLeft: "2px solid #EDE8E1" }}>
-          <span style={{ fontSize: 9, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, padding: "2px 6px", borderRadius: 6, background: "#F5F5F5", color: "#888", border: "1px solid #DDD", flexShrink: 0, marginTop: 1 }}>Backup</span>
-          <div>
-            <a href={backup.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#555", fontFamily: "'DM Sans', sans-serif", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 2 }}>{backup.displayName} ↗</a>
-            {backupWho && (
-              <div style={{ fontSize: 10, color: "#AAA", fontFamily: "'DM Sans', sans-serif", marginTop: 1 }}>
-                Book for: <span style={{ fontWeight: 600, color: "#888" }}>{backupWho}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function Summary({ prefs }) {
+export function Summary({ prefs, syncing, onPref, onNotes, onClosed, onRdNom, onRdConfirm, onLLStatus }) {
   const [collapsed, setCollapsed] = useState({});
   const isBeforeTrip = new Date() < TRIP_START;
-  const [summaryMode, setSummaryModeRaw] = useState(() => {
-    try { return localStorage.getItem("dw2026-summaryMode") || (isBeforeTrip ? "prebook" : "all"); } catch(_) { return isBeforeTrip ? "prebook" : "all"; }
-  });
-  const setSummaryMode = (m) => {
-    setSummaryModeRaw(m);
-    try { localStorage.setItem("dw2026-summaryMode", m); } catch(_) {}
-  };
+  const [summaryMode, setSummaryMode] = useState("llselection");
+  const [llSelPark, setLLSelPark] = useState("mk");
 
   // Build ranked LL list for a park
   function buildRankedLLs(parkId) {
@@ -959,13 +902,66 @@ export function Summary({ prefs }) {
     return { labeled, rankedSecond };
   }
 
+  // Get people who rated a ride Must Do or Like To
+  function bookers(rideId) {
+    return PEOPLE
+      .filter((p) => {
+        const pref = prefs[rideId]?.prefs?.[p.id];
+        return pref === "must" || pref === "like";
+      })
+      .map((p) => p.id);
+  }
+
+  function bookersDisplay(rideId) {
+    const who = bookers(rideId);
+    if (who.length === PEOPLE.length) return "All";
+    return who.join(" · ");
+  }
+
+  const SummaryRideItem = ({ label, isSingle, r, backup }) => {
+    const bg     = isSingle ? "#FFF3E0" : "#E8F5E9";
+    const color  = isSingle ? "#BF360C" : "#0A4A2E";
+    const border = isSingle ? "#FFCC80" : "#A5D6A7";
+    const who    = bookersDisplay(r.id);
+    const backupWho = backup ? bookersDisplay(backup.id) : null;
+    return (
+      <div className="summary-item">
+        <div className="summary-item-top">
+          <span className="summary-badge" style={{ background: bg, color, border: `1px solid ${border}` }}>{label}</span>
+          <div className="summary-ride-info">
+            <a href={r.url} target="_blank" rel="noreferrer" className="summary-ride-name">{r.displayName} ↗</a>
+            {who && (
+              <div style={{ fontSize: 10, color: "#888", fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>
+                Book for: <span style={{ fontWeight: 600, color: "#555" }}>{who}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        {backup && (
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 6, paddingLeft: 8, borderLeft: "2px solid #EDE8E1" }}>
+            <span style={{ fontSize: 9, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, padding: "2px 6px", borderRadius: 6, background: "#F5F5F5", color: "#888", border: "1px solid #DDD", flexShrink: 0, marginTop: 1 }}>Backup</span>
+            <div>
+              <a href={backup.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#555", fontFamily: "'DM Sans', sans-serif", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 2 }}>{backup.displayName} ↗</a>
+              {backupWho && (
+                <div style={{ fontSize: 10, color: "#AAA", fontFamily: "'DM Sans', sans-serif", marginTop: 1 }}>
+                  Book for: <span style={{ fontWeight: 600, color: "#888" }}>{backupWho}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div>
-      {/* Pre-Book / All toggle */}
+      {/* LL Selection / Pre-Book / Full Plan toggle */}
       <div style={{ display: "flex", background: "#EDE8E1", borderRadius: 20, padding: 3, marginBottom: 16 }}>
         {[
-          { id: "prebook", label: "Pre-Book Only" },
-          { id: "all",     label: "Full Plan" },
+          { id: "llselection", label: "LL Selection" },
+          { id: "prebook",     label: "Pre-Book Only" },
+          { id: "all",         label: "Full Plan" },
         ].map(({ id, label }) => (
           <button key={id} onClick={() => setSummaryMode(id)} style={{
             flex: 1, padding: "7px 0", border: "none", borderRadius: 17,
@@ -977,7 +973,35 @@ export function Summary({ prefs }) {
           }}>{label}</button>
         ))}
       </div>
-      {PARKS.map((park) => {
+      {/* LL Selection sub-view — park selector + ParkRides */}
+      {summaryMode === "llselection" && (
+        <div>
+          <div style={{ display:"flex", background:"#EDE8E1", borderRadius:20, padding:3, marginBottom:16 }}>
+            {PARKS.map(p => (
+              <button key={p.id} onClick={() => setLLSelPark(p.id)} style={{
+                flex:1, padding:"7px 0", border:"none", borderRadius:17,
+                fontSize:12, fontFamily:"'DM Sans',sans-serif", fontWeight:600,
+                cursor:"pointer", transition:"background 0.15s, color 0.15s",
+                background: llSelPark === p.id ? "#FFF" : "transparent",
+                color: llSelPark === p.id ? "#1A1A1A" : "#999",
+                boxShadow: llSelPark === p.id ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
+              }}>{p.name}</button>
+            ))}
+          </div>
+          <ParkRides
+            parkId={llSelPark}
+            prefs={prefs}
+            syncing={syncing}
+            onPref={onPref}
+            onNotes={onNotes}
+            onClosed={onClosed}
+            onRdNom={onRdNom}
+            onRdConfirm={onRdConfirm}
+            onLLStatus={onLLStatus}
+          />
+        </div>
+      )}
+      {(summaryMode === "prebook" || summaryMode === "all") && PARKS.map((park) => {
         const rdConf  = prefs[`rdc_${park.id}`] ?? null;
         const rdRide  = rdConf ? RIDES.find((r) => r.id === rdConf) : null;
         const { labeled, rankedSecond } = buildRankedLLs(park.id);
@@ -1013,7 +1037,7 @@ export function Summary({ prefs }) {
                     const rideTier = r.ll; // "mp1" or "mp2"
                     backup = rankedSecond.find((s) => s.ll === rideTier) ?? null;
                   }
-                  return <SummaryRideItem key={r.id} label={r.label} isSingle={r.isSingle} r={r} backup={backup} prefs={prefs} />;
+                  return <SummaryRideItem key={r.id} label={r.label} isSingle={r.isSingle} r={r} backup={backup} />;
                 })}
                 {showSecond && (
                   <>

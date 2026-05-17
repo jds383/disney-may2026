@@ -772,6 +772,44 @@ function HighlightRow({ h, color, borderBottom }) {
   );
 }
 
+// ── RidePreferences ──────────────────────────────────────────────────────────
+function RidePreferences({ prefs, syncing, onPref, onNotes, onClosed, onRdNom, onRdConfirm, onLLStatus }) {
+  const parks = [
+    { id: "mk", name: "Magic Kingdom" },
+    { id: "ep", name: "EPCOT" },
+    { id: "hs", name: "Hollywood Studios" },
+  ];
+  const [activePark, setActivePark] = useState("mk");
+  return (
+    <div>
+      {/* Park selector */}
+      <div style={{ display:"flex", background:"#EDE8E1", borderRadius:20, padding:3, marginBottom:16 }}>
+        {parks.map(p => (
+          <button key={p.id} onClick={() => setActivePark(p.id)} style={{
+            flex:1, padding:"7px 0", border:"none", borderRadius:17,
+            fontSize:12, fontFamily:"'DM Sans',sans-serif", fontWeight:600,
+            cursor:"pointer", transition:"background 0.15s, color 0.15s",
+            background: activePark === p.id ? "#FFF" : "transparent",
+            color: activePark === p.id ? "#1A1A1A" : "#999",
+            boxShadow: activePark === p.id ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
+          }}>{p.name}</button>
+        ))}
+      </div>
+      <ParkRides
+        parkId={activePark}
+        prefs={prefs}
+        syncing={syncing}
+        onPref={onPref}
+        onNotes={onNotes}
+        onClosed={onClosed}
+        onRdNom={onRdNom}
+        onRdConfirm={onRdConfirm}
+        onLLStatus={onLLStatus}
+      />
+    </div>
+  );
+}
+
 function ViewToggle({ view, setView }) {
   return (
     <div style={{
@@ -782,8 +820,9 @@ function ViewToggle({ view, setView }) {
       marginBottom: 16,
     }}>
       {[
-        { id: "itinerary", label: "🗓 Itinerary" },
-        { id: "llsummary", label: "⚡ LL Summary" },
+        { id: "preferences", label: "🎢 Preferences" },
+        { id: "llsummary",   label: "⚡ LL Plan" },
+        { id: "itinerary",   label: "🗓 Itinerary" },
       ].map(({ id, label }) => (
         <button
           key={id}
@@ -981,10 +1020,10 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
 
         {/* Date selector row — always rendered, visibility hidden in LL view to hold space */}
         <div style={{
-          visibility: view === "llsummary" ? "hidden" : "visible",
-          height: view === "llsummary" ? 0 : "auto",
+          visibility: (view === "llsummary" || view === "preferences") ? "hidden" : "visible",
+          height: (view === "llsummary" || view === "preferences") ? 0 : "auto",
           overflow: "hidden",
-          marginBottom: view === "llsummary" ? 0 : 16,
+          marginBottom: (view === "llsummary" || view === "preferences") ? 0 : 16,
           display: "flex",
           alignItems: "center",
           gap: 6,
@@ -1029,9 +1068,23 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
           </div>
         </div>
 
+        {/* ── Ride Preferences view ─────────────────────────────────────── */}
+        {view === "preferences" && (
+          <RidePreferences
+            prefs={prefs}
+            syncing={syncing}
+            onPref={onPref}
+            onNotes={onNotes}
+            onClosed={onClosed}
+            onRdNom={onRdNom}
+            onRdConfirm={onRdConfirm}
+            onLLStatus={w_onLLStatus}
+          />
+        )}
+
         {/* ── LL Summary view ────────────────────────────────────────────── */}
         {view === "llsummary" && (
-          <Summary prefs={prefs} onLLStatus={w_onLLStatus} />
+          <Summary prefs={prefs} syncing={syncing} onPref={onPref} onNotes={onNotes} onClosed={onClosed} onRdNom={onRdNom} onRdConfirm={onRdConfirm} onLLStatus={w_onLLStatus} />
         )}
 
         {/* ── Itinerary view ──────────────────────────────────────────────── */}
@@ -1125,18 +1178,6 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
 
             {/* Dining Credits */}
             <DiningCredits isoDate={day.isoDate} />
-
-            {/* LL sections below tile — park days only */}
-            {day.parkId && (
-              <div style={{ marginTop: 16 }}>
-                <ParkRides
-                  parkId={day.parkId}
-                  prefs={prefs}
-                  syncing={syncing}
-                  {...llHandlers}
-                />
-              </div>
-            )}
 
             <div style={{ marginTop:32, fontSize:10, color:"#CCC", textAlign:"center", fontFamily:"'DM Sans',sans-serif", letterSpacing:"0.1em" }}>DISNEY WORLD — MAY 2026</div>
           </>
