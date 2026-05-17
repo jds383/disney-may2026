@@ -869,8 +869,14 @@ function selloutMinutes(rideId) {
 export function Summary({ prefs, syncing, onPref, onNotes, onClosed, onRdNom, onRdConfirm, onLLStatus }) {
   const [collapsed, setCollapsed] = useState({});
   const isBeforeTrip = new Date() < TRIP_START;
-  const [summaryMode, setSummaryMode] = useState("llselection");
-  const [llSelPark, setLLSelPark] = useState("mk");
+  const [summaryMode, setSummaryModeRaw] = useState(() => {
+    try { return localStorage.getItem("dw2026-summaryMode") || "llselection"; } catch (e) { return "llselection"; }
+  });
+  const setSummaryMode = (m) => { setSummaryModeRaw(m); try { localStorage.setItem("dw2026-summaryMode", m); } catch (e) {} };
+  const [llSelPark, setLLSelParkRaw] = useState(() => {
+    try { return localStorage.getItem("dw2026-llSelPark") || "mk"; } catch (e) { return "mk"; }
+  });
+  const setLLSelPark = (p) => { setLLSelParkRaw(p); try { localStorage.setItem("dw2026-llSelPark", p); } catch (e) {} };
 
   // Build ranked LL list for a park
   function buildRankedLLs(parkId) {

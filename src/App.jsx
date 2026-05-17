@@ -82,7 +82,10 @@ async function fetchAllVotes() {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [view,      setView]      = useState("itinerary"); // valid: "preferences" | "llsummary" | "itinerary"
+  const [view, setViewRaw] = useState(() => {
+    try { return localStorage.getItem("dw2026-view") || "itinerary"; } catch (e) { return "itinerary"; }
+  });
+  const setView = (v) => { setViewRaw(v); try { localStorage.setItem("dw2026-view", v); } catch (e) {} };
   const [prefs,     setPrefs]     = useState(() => loadStorage());
   const [loading,   setLoading]   = useState(true);
   const [syncing,   setSyncing]   = useState({});

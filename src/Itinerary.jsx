@@ -779,7 +779,10 @@ function RidePreferences({ prefs, syncing, onPref, onNotes, onClosed, onRdNom, o
     { id: "ep", name: "EPCOT" },
     { id: "hs", name: "Hollywood Studios" },
   ];
-  const [activePark, setActivePark] = useState("mk");
+  const [activePark, setActivePark] = useState(() => {
+    try { return localStorage.getItem("dw2026-prefPark") || "mk"; } catch (e) { return "mk"; }
+  });
+  const setPark = (p) => { setActivePark(p); try { localStorage.setItem("dw2026-prefPark", p); } catch (e) {} };
   return (
     <div>
       {/* Park selector */}
