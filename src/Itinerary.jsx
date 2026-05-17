@@ -805,6 +805,7 @@ function RidePreferences({ prefs, syncing, onPref, onNotes, onClosed, onRdNom, o
         onRdNom={onRdNom}
         onRdConfirm={onRdConfirm}
         onLLStatus={onLLStatus}
+        showRankings={false}
       />
     </div>
   );

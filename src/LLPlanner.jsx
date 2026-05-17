@@ -1065,7 +1065,7 @@ export function Summary({ prefs, syncing, onPref, onNotes, onClosed, onRdNom, on
 
 // ── ParkRides ─────────────────────────────────────────────────────────────────
 
-export function ParkRides({ parkId, prefs, onPref, onNotes, onClosed, onRdNom, syncing, onRdConfirm, onLLStatus }) {
+export function ParkRides({ parkId, prefs, onPref, onNotes, onClosed, onRdNom, syncing, onRdConfirm, onLLStatus, showRankings = true }) {
   const [ratedOpen, setRatedOpen] = useState(false);
 
   const parkRides = RIDES.filter((r) => r.park === parkId);
@@ -1095,7 +1095,7 @@ export function ParkRides({ parkId, prefs, onPref, onNotes, onClosed, onRdNom, s
           ))}
         </div>
       )}
-      <Rankings parkId={parkId} prefs={prefs} onRdConfirm={onRdConfirm} onLLStatus={onLLStatus} />
+      {showRankings && <Rankings parkId={parkId} prefs={prefs} onRdConfirm={onRdConfirm} onLLStatus={onLLStatus} />}
     </>
   );
 }
