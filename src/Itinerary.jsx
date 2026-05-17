@@ -249,18 +249,26 @@ function parseTimeToInt(str) {
   return h * 100 + min;
 }
 
-// Returns true if the LL window closed more than 60 mins ago
-function isLLExpired(endTime, isoDate) {
-  if (!endTime || !isoDate) return false;
+// Returns true if the LL window has expired:
+// - has end time: 5 mins past end time
+// - no end time: 60 mins past start time
+function isLLExpired(endTime, isoDate, startTime) {
+  if (!isoDate) return false;
   const today = new Date().toISOString().split("T")[0];
-  if (isoDate !== today) return false; // only expire on the actual day
+  if (isoDate !== today) return false;
   const now = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
-  const t = parseTimeToInt(endTime);
-  const endH = Math.floor(t / 100);
-  const endM = t % 100;
-  const endMins = endH * 60 + endM;
-  return nowMins > endMins + 60;
+  if (endTime) {
+    const t = parseTimeToInt(endTime);
+    const endMins = Math.floor(t / 100) * 60 + (t % 100);
+    return nowMins > endMins + 5;
+  } else if (startTime) {
+    const t = parseTimeToInt(startTime);
+    const startMins = Math.floor(t / 100) * 60 + (t % 100);
+    return nowMins > startMins + 60;
+  }
+  return false;
+}
 }
 
 async function fetchBookedLLs() {
@@ -931,7 +939,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   const mergedHighlights = (() => {
     const base = day.highlights.map(h => ({ ...h, _type: "highlight" }));
     const llsForDay = bookedLLs
-      .filter(ll => ll.date === day.isoDate && (ll.visibility === "Show" || !ll.visibility) && !isLLExpired(ll.endTime, ll.date))
+      .filter(ll => ll.date === day.isoDate && (ll.visibility === "Show" || !ll.visibility) && !isLLExpired(ll.endTime, ll.date, ll.startTime))
       .map(ll => ({
         _type: "ll",
         sortTime: ll.sortTime ?? parseTimeToInt(ll.startTime),
@@ -954,7 +962,7 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   })();
 
   const archivedLLs = bookedLLs.filter(ll =>
-    ll.date === day.isoDate && (ll.visibility === "Archive" || isLLExpired(ll.endTime, ll.date))
+    ll.date === day.isoDate && (ll.visibility === "Archive" || isLLExpired(ll.endTime, ll.date, ll.startTime))
   );
 
   const swipeStart = useRef(null);
