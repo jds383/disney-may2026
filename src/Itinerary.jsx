@@ -346,36 +346,26 @@ async function fetchCalendarDays() {
   } catch (e) { return []; }
 }
 
-function Countdown({ onTripleTap, testMode }) {
+function CountdownTitle({ testMode }) {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dep = new Date(2026, 4, 21);
   const ret = new Date(2026, 4, 27);
-  let badge;
-  if (today < dep) {
+  // "See ya real soon" triggers 2 hours before the departure flight on May 27
+  const seeYa = new Date(2026, 4, 27, 11, 0); // departure day 11 AM
+  let text;
+  if (now >= seeYa) {
+    text = "See ya real soon! 👋";
+  } else if (today < dep) {
     const n = Math.round((dep - today) / 86400000);
-    badge = `${n} ${n === 1 ? "day" : "days"} to go`;
+    text = `${n} ${n === 1 ? "day" : "days"} until Disney World May 2026`;
   } else if (today <= ret) {
     const n = Math.round((today - dep) / 86400000) + 1;
-    badge = `Day ${n} of 7 · See ya real soon! 🎉`;
+    text = `Day ${n} of Disney World May 2026`;
   } else {
-    badge = "See ya real soon! 👋🏰";
+    text = "See ya real soon! 👋";
   }
-  const tapRef = useRef({count:0, timer:null});
-  const handleTap = () => {
-    tapRef.current.count++;
-    clearTimeout(tapRef.current.timer);
-    tapRef.current.timer = setTimeout(() => { tapRef.current.count = 0; }, 600);
-    if (tapRef.current.count >= 3) { tapRef.current.count = 0; onTripleTap && onTripleTap(); }
-  };
-  return (
-    <span
-      onClick={handleTap}
-      style={{ fontSize: 11, color: "#C8A96E", fontFamily: "'DM Sans', sans-serif", fontStyle: "italic", userSelect: "none", cursor: "default" }}
-    >
-      {badge}{testMode && <span style={{ fontSize: 9, opacity: 0.4, marginLeft: 4 }}>🧪</span>}
-    </span>
-  );
+  return <>{text}{testMode && <span style={{ fontSize: 9, opacity: 0.4, marginLeft: 6 }}>🧪</span>}</>;
 }
 
 function isToday(dateStr) {
@@ -1003,15 +993,24 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
     onRdNom: w_onRdNom, onRdConfirm: w_onRdConfirm, onLLStatus: w_onLLStatus,
   };
 
+  const tapRef = useRef({count:0, timer:null});
+  const toggleTestMode_tap = () => {
+    tapRef.current.count++;
+    clearTimeout(tapRef.current.timer);
+    tapRef.current.timer = setTimeout(() => { tapRef.current.count = 0; }, 600);
+    if (tapRef.current.count >= 3) { tapRef.current.count = 0; toggleTestMode(); }
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#FBF7F2", fontFamily: "'DM Sans', sans-serif", padding: "16px 20px 40px" }}>
       <div style={{ maxWidth: 480, margin: "0 auto" }}>
         {isToday("2026-05-21") && <Fireworks />}
 
         {/* Title + countdown */}
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 12 }}>
-          <h1 style={{ fontSize: 18, fontWeight: "normal", margin: 0, letterSpacing: "-0.02em", color: "#1A1A1A", fontFamily: "'DM Sans', sans-serif" }}>Disney World May 2026</h1>
-          <Countdown onTripleTap={toggleTestMode} testMode={testMode} />
+        <div style={{ marginBottom: 12 }}>
+          <h1 onClick={toggleTestMode_tap} style={{ fontSize: 18, fontWeight: "normal", margin: 0, letterSpacing: "-0.02em", color: "#1A1A1A", fontFamily: "'DM Sans', sans-serif", cursor: "default", userSelect: "none" }}>
+            <CountdownTitle testMode={testMode} />
+          </h1>
         </div>
 
         {/* Permanent view toggle — always visible */}
