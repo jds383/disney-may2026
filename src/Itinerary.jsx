@@ -351,10 +351,16 @@ function Countdown({ onTripleTap, testMode }) {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dep = new Date(2026, 4, 21);
   const ret = new Date(2026, 4, 27);
-  let mode, value, sublabel;
-  if (today < dep) { mode = "pre"; value = Math.round((dep - today) / 86400000); sublabel = value === 1 ? "DAY TO GO" : "DAYS TO GO"; }
-  else if (today <= ret) { mode = "trip"; value = Math.round((today - dep) / 86400000) + 1; sublabel = "OF 7"; }
-  else { mode = "done"; }
+  let badge;
+  if (today < dep) {
+    const n = Math.round((dep - today) / 86400000);
+    badge = `${n} ${n === 1 ? "day" : "days"} to go`;
+  } else if (today <= ret) {
+    const n = Math.round((today - dep) / 86400000) + 1;
+    badge = `Day ${n} of 7 · See ya real soon! 🎉`;
+  } else {
+    badge = "See ya real soon! 👋🏰";
+  }
   const tapRef = useRef({count:0, timer:null});
   const handleTap = () => {
     tapRef.current.count++;
@@ -362,24 +368,13 @@ function Countdown({ onTripleTap, testMode }) {
     tapRef.current.timer = setTimeout(() => { tapRef.current.count = 0; }, 600);
     if (tapRef.current.count >= 3) { tapRef.current.count = 0; onTripleTap && onTripleTap(); }
   };
-  if (mode === "done") return <div style={{ textAlign: "center", padding: "12px 0 20px" }}><div style={{ fontSize: 20, color: "#C8A96E", fontFamily: "'DM Sans', sans-serif", fontStyle: "italic" }}>See ya real soon! 👋🏰</div></div>;
   return (
-    <div onClick={handleTap} style={{ display: "flex", alignItems: "center", gap: 16, padding: "4px 0 20px", cursor:"default", userSelect:"none" }}>
-      <div style={{ position: "relative", width: 82, height: 88, flexShrink: 0, background: "#F0EDE8", borderRadius: 10, boxShadow: "0 6px 18px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.9)", border: "1px solid #D5CFC7", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "50%", left: -5, transform: "translateY(-50%)", width: 10, height: 10, borderRadius: "50%", background: "#C0BAB2", zIndex: 3 }} />
-        <div style={{ position: "absolute", top: "50%", right: -5, transform: "translateY(-50%)", width: 10, height: 10, borderRadius: "50%", background: "#C0BAB2", zIndex: 3 }} />
-        <span style={{ fontSize: 72, fontWeight: "bold", color: "#1C2B4A", fontFamily: "'DM Sans', sans-serif", lineHeight: 1, userSelect: "none", letterSpacing: "-2px" }}>{String(value).padStart(2, "0")}</span>
-        <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 3, background: "#C0BAB2", transform: "translateY(-50%)", zIndex: 2 }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "rgba(255,255,255,0.12)", borderRadius: "10px 10px 0 0", zIndex: 1, pointerEvents: "none" }} />
-      </div>
-      <div>
-        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-          <div style={{ fontSize: 16, letterSpacing: "0.12em", color: "#1C2B4A", fontFamily: "'DM Sans', sans-serif", fontWeight: "bold" }}>{sublabel}</div>
-          {testMode && <span style={{ fontSize:10, opacity:0.4 }}>🧪</span>}
-        </div>
-        {mode === "trip" && <div style={{ fontSize: 11, color: "#C8A96E", fontFamily: "'DM Sans', sans-serif", fontStyle: "italic", marginTop: 4 }}>See ya real soon! 🎉</div>}
-      </div>
-    </div>
+    <span
+      onClick={handleTap}
+      style={{ fontSize: 11, color: "#C8A96E", fontFamily: "'DM Sans', sans-serif", fontStyle: "italic", userSelect: "none", cursor: "default" }}
+    >
+      {badge}{testMode && <span style={{ fontSize: 9, opacity: 0.4, marginLeft: 4 }}>🧪</span>}
+    </span>
   );
 }
 
@@ -1009,15 +1004,15 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#FBF7F2", fontFamily: "'DM Sans', sans-serif", padding: "28px 20px 40px" }}>
+    <div style={{ minHeight: "100vh", background: "#FBF7F2", fontFamily: "'DM Sans', sans-serif", padding: "16px 20px 40px" }}>
       <div style={{ maxWidth: 480, margin: "0 auto" }}>
         {isToday("2026-05-21") && <Fireworks />}
 
-        {/* Title */}
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: "normal", margin: "0 0 6px 0", letterSpacing: "-0.02em", color: "#1A1A1A", textAlign: "left", fontFamily: "'DM Sans', sans-serif" }}>Disney World May 2026</h1>
+        {/* Title + countdown */}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 12 }}>
+          <h1 style={{ fontSize: 18, fontWeight: "normal", margin: 0, letterSpacing: "-0.02em", color: "#1A1A1A", fontFamily: "'DM Sans', sans-serif" }}>Disney World May 2026</h1>
+          <Countdown onTripleTap={toggleTestMode} testMode={testMode} />
         </div>
-        <Countdown onTripleTap={toggleTestMode} testMode={testMode} />
 
         {/* Permanent view toggle — always visible */}
         <ViewToggle view={view} setView={setView} />
@@ -1101,13 +1096,13 @@ export function Itinerary({ view, setView, prefs, syncing, loading, syncError, o
             <div onPointerDown={onPointerDown} onPointerUp={onPointerUp} style={{ background:"#FFF", borderRadius:16, overflow:"hidden", boxShadow:"0 4px 24px rgba(0,0,0,0.08)", border:"1px solid #EDE8E1", touchAction:"pan-y", userSelect:"none" }}>
               {/* Header */}
               <div style={{ background: day.color }}>
-                <div style={{ padding:"20px 22px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
+                <div style={{ padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
                   <div style={{ flex:1, minWidth:0, textAlign:"left" }}>
-                    <div style={{ fontSize:10, letterSpacing:"0.15em", textTransform:"uppercase", color:"rgba(255,255,255,0.6)", fontFamily:"'DM Sans', sans-serif", marginBottom:4 }}>
+                    <div style={{ fontSize:9, letterSpacing:"0.15em", textTransform:"uppercase", color:"rgba(255,255,255,0.6)", fontFamily:"'DM Sans', sans-serif", marginBottom:3 }}>
                       {(() => { const [dow,mon,num]=day.date.split(" "); const dowFull={Thu:"Thursday",Fri:"Friday",Sat:"Saturday",Sun:"Sunday",Mon:"Monday",Tue:"Tuesday",Wed:"Wednesday"}; const n=parseInt(num); const s=[1,21].includes(n)?"st":[2,22].includes(n)?"nd":[3,23].includes(n)?"rd":"th"; return `${dowFull[dow]}, ${mon} ${n}${s}, 2026`; })()}
                     </div>
-                    <div style={{ fontSize:22, color:"#FFF", fontWeight:"normal", marginBottom:4 }}>{day.emoji} {day.label}</div>
-                    <div style={{ fontSize:12, color:"rgba(255,255,255,0.6)" }}>{day.hotel}</div>
+                    <div style={{ fontSize:18, color:"#FFF", fontWeight:"normal", marginBottom:2 }}>{day.emoji} {day.label}</div>
+                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)" }}>{day.hotel}</div>
                     {day.rooms && (
                       <div style={{ display:"flex", gap:8, marginTop:6 }}>
                         {day.rooms.map((r,ri) => (
