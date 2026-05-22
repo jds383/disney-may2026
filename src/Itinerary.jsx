@@ -185,7 +185,7 @@ const days = [
   {
     date: "Thu May 21", label: "Arrival Day", hotel: "Home → Villas at Grand Floridian",
     weatherDate: "2026-05-21", weatherLat: 28.4104, weatherLon: -81.5868, isoDate: "2026-05-21",
-    rooms: [{ label: "S FAMILY" }, { label: "M FAMILY" }], color: "#2C5F8A", emoji: "✈️",
+    rooms: [{ label: "S FAMILY", value: "9412" }, { label: "M FAMILY", value: "9410" }], color: "#2C5F8A", emoji: "✈️",
     parkId: null,
     highlights: []
   },
